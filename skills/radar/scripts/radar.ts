@@ -137,10 +137,18 @@ function getArg(args: string[], flag: string): string | null {
 async function cmdCheckUpdates(args: string[]): Promise<void> {
   const registry = loadRegistry(REGISTRY_PATH)
   const versions = loadVersions(VERSIONS_PATH)
+  const asJson = args.includes('--json')
 
   const options = {
     tool: getArg(args, '--tool') ?? undefined,
     category: getArg(args, '--category') ?? undefined
+  }
+
+  if (asJson) {
+    const result = await checkUpdates(registry, versions, options)
+    saveVersions(VERSIONS_PATH, versions)
+    console.log(JSON.stringify(result, null, 2))
+    return
   }
 
   console.log('')
@@ -743,7 +751,8 @@ function showHelp(): void {
   console.log('')
   console.log('Usage: bun radar.ts <command>')
   console.log('  init [--workflow]                     Create .radar/ (+ weekly CI check that opens issues)')
-  console.log('  check [--tool X] [--category X]       Fetch latest versions, diff against state')
+  console.log('  check [--tool X] [--category X] [--json]')
+  console.log('                                        Fetch latest versions, diff against state')
   console.log('  list [--category X] [--has-updates] [--min-stars N]')
   console.log('                                        Tracked tools by category')
   console.log('  add <type> <source> [--category X] [--name X]')

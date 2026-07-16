@@ -21,7 +21,8 @@ bun <skill-dir>/scripts/radar.ts <command>   # requires bun
 ## First use in a repo: `/radar init`
 
 1. Run `radar.ts init` (add `--workflow` if the user wants the weekly
-   GitHub Actions check — it opens an issue when updates land).
+   GitHub Actions check — it maintains a rolling "Radar digest" issue
+   and comments when new updates land).
 2. Read the project's context (README, CLAUDE.md/AGENTS.md, package
    manifest, roadmap docs) and **propose seed entries** per category:
    - `official` — tools the project builds on (for an agent-adjacent

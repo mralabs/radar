@@ -49,8 +49,9 @@ fetching, state) runs in the bundled CLI (`scripts/radar.ts`, zero deps,
 bun). The agent does the judgment: compares changes against your roadmap
 and code, produces recommendations.
 
-Optional weekly check via GitHub Actions: `/radar init --workflow` — opens
-an issue when updates land (GitHub notifications = your alerting, no infra).
+Optional weekly check via GitHub Actions: `/radar init --workflow` — keeps
+a rolling "Radar digest" issue and comments when new updates land (GitHub
+notifications = your alerting, no infra; run summary in the Actions tab).
 
 ## Data layout (in the consuming repo)
 
