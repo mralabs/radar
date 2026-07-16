@@ -16,6 +16,7 @@ skills/radar/          the installable skill (only this dir reaches users)
 │   └── core/          self-contained domain logic (no imports outside core/)
 │       └── api/       one adapter per source: github, npm, pypi, nuget
 └── templates/         registry seed + weekly GitHub Actions workflow
+tests/                 unit tests — outside the skill so installs stay lean
 ```
 
 Data always lives in the CONSUMING repo under `.radar/` (cwd-relative,
@@ -25,7 +26,7 @@ development only — they are not part of the installed skill.
 ## Commands
 
 ```bash
-bun test skills/radar/scripts/core   # all tests — network-free, must pass
+bun test tests                       # all tests — network-free, must pass
 bun run typecheck                    # strict tsc --noEmit, must pass
 bun skills/radar/scripts/radar.ts help
 ```

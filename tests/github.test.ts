@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, afterEach } from 'bun:test'
-import { getGitHubReleasesSince, getGitHubCommitsSince, extractGitHubRepo, tagMatchesVersion } from './github'
+import { getGitHubReleasesSince, getGitHubCommitsSince, extractGitHubRepo, tagMatchesVersion } from '../skills/radar/scripts/core/api/github'
 
 const realFetch = globalThis.fetch
 
