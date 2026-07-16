@@ -1,0 +1,13 @@
+{
+  "name": "radar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test skills/radar/scripts/core",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.6.0"
+  }
+}

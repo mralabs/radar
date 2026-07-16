@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": null,
+  "categories": {
+    "official": {
+      "name": "Official / Upstream",
+      "description": "Primary tools this project builds on — check their changelogs first"
+    },
+    "competitors": {
+      "name": "Competitors",
+      "description": "Alternative products in the same space — watch for features worth adopting"
+    },
+    "deps": {
+      "name": "Key Dependencies",
+      "description": "Libraries whose breaking changes affect this project"
+    },
+    "inspiration": {
+      "name": "Inspiration",
+      "description": "Not direct competitors, but sources of ideas"
+    }
+  },
+  "tools": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "category": "official",
+      "type": "github",
+      "source": "anthropics/claude-code",
+      "url": "https://github.com/anthropics/claude-code",
+      "description": "Official Claude Code CLI — changelog is the primary signal.",
+      "stars": null,
+      "status": "active",
+      "features": [],
+      "tags": ["cli", "official"]
+    }
+  ]
+}

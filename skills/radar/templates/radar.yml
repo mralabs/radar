@@ -1,0 +1,68 @@
+name: radar-weekly
+
+# Runs the radar CLI vendored into this repo at .github/radar/ by
+# `radar init --workflow`. No remote code is fetched at run time — update
+# the vendored copy by re-running init after a skill update.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1" # Monday 07:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Run check
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bun .github/radar/radar.ts check | tee /tmp/radar-out.txt
+          UPDATES=$(grep -c 'UPDATE' /tmp/radar-out.txt || true)
+          echo "updates=$UPDATES" >> "$GITHUB_OUTPUT"
+
+      - name: Commit updated state
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add .radar/versions.json
+          git diff --cached --quiet || git commit -m "chore(radar): weekly check" && git push
+
+      - name: Open issue when updates found
+        if: steps.check.outputs.updates != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Updates repeat on every run until analyzed (mark-analyzed moves
+          # the anchor) — fingerprint the update set so an already-open
+          # issue for the same versions is not duplicated weekly.
+          # ANSI codes are stripped so the hash tracks content, not colors.
+          FP=$(grep 'UPDATE' /tmp/radar-out.txt | sed $'s/\x1b\\[[0-9;]*m//g' | sort | shasum -a 256 | cut -c1-12)
+          if gh issue list --label radar --state open --limit 1000 --json body \
+              --jq '.[].body' | grep -q "radar-fingerprint: $FP"; then
+            echo "Open issue with fingerprint $FP already exists — skipping."
+            exit 0
+          fi
+          BODY=$(printf '```\n%s\n```\n\nRun `/radar` locally for analysis and recommendations.\n\n<!-- radar-fingerprint: %s -->' "$(cat /tmp/radar-out.txt)" "$FP")
+          gh label create radar --color 1D76DB --description "radar ecosystem updates" --force
+          gh issue create \
+            --title "📡 Radar: ${{ steps.check.outputs.updates }} update(s) detected" \
+            --body "$BODY" \
+            --label radar
+
+      # ── Optional: full AI analysis written into the issue ──────────────
+      # Requires ANTHROPIC_API_KEY secret. Uncomment to enable (and pin the
+      # action to a reviewed SHA, same policy as above).
+      # - uses: anthropics/claude-code-action@v1
+      #   with:
+      #     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      #     prompt: "Run the radar skill analysis on the updates in .radar/ and comment your findings on the newest issue labelled 'radar'."
