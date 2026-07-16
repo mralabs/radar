@@ -54,6 +54,9 @@ CI enforces both on every push/PR.
 ## Conventions
 
 - Conventional commits (`feat:`, `fix:`, `chore:` …), English.
+- Release = `gh skill publish --tag vX.Y.Z` AND bumping `version` in
+  `.claude-plugin/plugin.json` + `marketplace.json` (the Claude Code plugin
+  channel only sees updates when that field changes).
 - Deterministic work belongs in scripts; judgment belongs in SKILL.md prose.
 - New source type touches four places: an adapter in `core/api/` (+ its
   export in `core/api/index.ts`), `TOOL_TYPES` in types.ts, the

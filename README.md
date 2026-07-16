@@ -9,6 +9,15 @@ Claude Code, Codex, Cursor, Gemini CLI, Copilot, Antigravity.
 
 ## Install
 
+**Claude Code** — as a plugin (central install, per-project enable):
+
+```
+/plugin marketplace add mralabs/radar
+/plugin install radar@mralabs
+```
+
+**Any agent** — via the GitHub CLI:
+
 ```bash
 gh skill install mralabs/radar radar                       # interactive — pick your agent
 ```
