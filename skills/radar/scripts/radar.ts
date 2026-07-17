@@ -31,8 +31,8 @@ import {
   extractToolFeatures,
   compareFeatures,
   discoverTools
-} from './core'
-import type { Tool, ToolType, VersionHistoryEntry } from './core'
+} from './core/index.ts'
+import type { Tool, ToolType, VersionHistoryEntry } from './core/index.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Paths — all data lives in the consuming repo's .radar/ dir

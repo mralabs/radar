@@ -4,8 +4,8 @@
  * Fetch-based clients for GitHub, PyPI, and NPM.
  */
 
-export { fetchJson } from './client'
-export type { FetchOptions } from './client'
+export { fetchJson } from './client.ts'
+export type { FetchOptions } from './client.ts'
 
 export {
   GITHUB_API,
@@ -19,7 +19,7 @@ export {
   getGitHubRateLimit,
   setGitHubToken,
   getGitHubToken
-} from './github'
-export { getPyPIVersion, getPyPIRepoUrl } from './pypi'
-export { getNPMVersion, getNPMRepoUrl } from './npm'
-export { getNuGetVersion } from './nuget'
+} from './github.ts'
+export { getPyPIVersion, getPyPIRepoUrl } from './pypi.ts'
+export { getNPMVersion, getNPMRepoUrl } from './npm.ts'
+export { getNuGetVersion } from './nuget.ts'

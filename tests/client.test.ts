@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
-import { fetchJson } from '../skills/radar/scripts/core/api/client'
+import { fetchJson } from '../skills/radar/scripts/core/api/client.ts'
 
 const realFetch = globalThis.fetch
 

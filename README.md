@@ -38,7 +38,8 @@ gh skill install mralabs/radar radar --agent github-copilot
 
 Default scope is the current repo; add `--scope user` to install globally.
 
-Requires `gh` ≥ 2.8x (2026) and [bun](https://bun.sh) for the bundled CLI.
+Requires `gh` ≥ 2.8x (2026). The bundled CLI runs on [bun](https://bun.sh)
+or plain Node ≥ 22.18 — whichever is already installed.
 No `gh`? Cloning this repo's `skills/radar/` into your agent's skills
 directory works the same.
 
@@ -60,8 +61,8 @@ but nothing gets created until you say so.
 
 Deterministic work (version checks against GitHub/npm/PyPI, changelog
 fetching, state) runs in the bundled CLI (`scripts/radar.ts`, zero deps,
-bun). The agent does the judgment: compares changes against your roadmap
-and code, produces recommendations.
+bun or node). The agent does the judgment: compares changes against your
+roadmap and code, produces recommendations.
 
 Optional weekly check via GitHub Actions: `/radar init --workflow` — keeps
 a rolling "Radar digest" issue and comments when new updates land (GitHub

@@ -4,8 +4,8 @@
  * Fetch package versions from NuGet (for .NET packages like Semantic Kernel).
  */
 
-import { fetchJson } from './client'
-import type { VersionResult, NuGetResponse } from '../types'
+import { fetchJson } from './client.ts'
+import type { VersionResult, NuGetResponse } from '../types.ts'
 
 const NUGET_API = 'https://api.nuget.org/v3-flatcontainer'
 

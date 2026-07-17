@@ -5,10 +5,10 @@
  * Filters against existing registry to only suggest new tools.
  */
 
-import { fetchJson } from './api/client'
-import { GITHUB_API, getAuthOptions } from './api/github'
-import type { Registry, DiscoveryResult } from './types'
-import { MIN_STARS_THRESHOLD } from './reports'
+import { fetchJson } from './api/client.ts'
+import { GITHUB_API, getAuthOptions } from './api/github.ts'
+import type { Registry, DiscoveryResult } from './types.ts'
+import { MIN_STARS_THRESHOLD } from './reports.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Types

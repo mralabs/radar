@@ -4,7 +4,7 @@
  * Track version changes over time with semantic versioning analysis.
  */
 
-import type { VersionData, VersionHistoryEntry, VersionChangeType } from './types'
+import type { VersionData, VersionHistoryEntry, VersionChangeType } from './types.ts'
 
 // ─────────────────────────────────────────────────────────────
 // SemVer Parsing

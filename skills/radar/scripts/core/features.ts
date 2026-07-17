@@ -4,9 +4,9 @@
  * Extract features from README files automatically.
  */
 
-import { fetchJson } from './api/client'
-import { getAuthOptions } from './api/github'
-import type { Tool } from './types'
+import { fetchJson } from './api/client.ts'
+import { getAuthOptions } from './api/github.ts'
+import type { Tool } from './types.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Types

@@ -17,3 +17,6 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun test tests
+      # dual-runtime invariant: the CLI must also run on bare node
+      # (runner's preinstalled Node ≥ 22.18 strips types natively)
+      - run: node skills/radar/scripts/radar.ts help > /dev/null

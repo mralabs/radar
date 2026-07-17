@@ -11,8 +11,8 @@ import {
   removeTool,
   getToolDetails,
   markAnalyzed
-} from '../skills/radar/scripts/core/tools'
-import type { Registry, Versions, Tool } from '../skills/radar/scripts/core/types'
+} from '../skills/radar/scripts/core/tools.ts'
+import type { Registry, Versions, Tool } from '../skills/radar/scripts/core/types.ts'
 
 describe('generateToolId', () => {
   it('should generate lowercase id from source', () => {

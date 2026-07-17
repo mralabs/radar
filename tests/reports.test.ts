@@ -5,8 +5,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { existsSync, mkdirSync, rmdirSync, writeFileSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
-import { checkUpdates, listTools, suggestFeatures } from '../skills/radar/scripts/core/reports'
-import type { Registry, Versions } from '../skills/radar/scripts/core/types'
+import { checkUpdates, listTools, suggestFeatures } from '../skills/radar/scripts/core/reports.ts'
+import type { Registry, Versions } from '../skills/radar/scripts/core/types.ts'
 
 describe('listTools', () => {
   const registry: Registry = {

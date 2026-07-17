@@ -23,14 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-
+      # ubuntu-latest ships Node ≥ 22.18, which runs .ts natively — no
+      # runtime setup step, one less action to pin and audit.
       - name: Run check
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          bun .github/radar/radar.ts check --json > /tmp/radar.json
+          node .github/radar/radar.ts check --json > /tmp/radar.json
           echo "updates=$(jq '.updates | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"
 
       - name: Write run summary

@@ -11,7 +11,7 @@ import type {
   Versions,
   VersionData,
   AddToolOptions
-} from './types'
+} from './types.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Tool ID Generation

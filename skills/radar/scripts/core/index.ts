@@ -22,7 +22,7 @@
  */
 
 // Types
-export { TOOL_TYPES } from './types'
+export { TOOL_TYPES } from './types.ts'
 export type {
   ToolType,
   ToolStatus,
@@ -53,7 +53,7 @@ export type {
   FeatureDefinition,
   ComparisonData,
   Suggestion
-} from './types'
+} from './types.ts'
 
 // API Clients
 export {
@@ -67,8 +67,8 @@ export {
   getPyPIVersion,
   getNPMVersion,
   getNuGetVersion
-} from './api'
-export type { FetchOptions } from './api'
+} from './api/index.ts'
+export type { FetchOptions } from './api/index.ts'
 
 // Registry
 export {
@@ -76,7 +76,7 @@ export {
   saveRegistry,
   loadVersions,
   saveVersions
-} from './registry'
+} from './registry.ts'
 
 // Tools
 export {
@@ -87,13 +87,13 @@ export {
   removeTool,
   getToolDetails,
   markAnalyzed
-} from './tools'
+} from './tools.ts'
 export type {
   AddToolResult,
   RemoveToolResult,
   ToolDetails,
   MarkAnalyzedResult
-} from './tools'
+} from './tools.ts'
 
 // Reports
 export {
@@ -101,7 +101,7 @@ export {
   listTools,
   getChangelog,
   suggestFeatures
-} from './reports'
+} from './reports.ts'
 export type {
   CheckUpdatesCallbacks,
   ToolListItem,
@@ -110,7 +110,7 @@ export type {
   ChangelogRelease,
   ChangelogCommit,
   ChangelogResult
-} from './reports'
+} from './reports.ts'
 
 // History
 export {
@@ -121,24 +121,24 @@ export {
   getVersionHistory,
   getBreakingChanges,
   getMajorChanges
-} from './history'
+} from './history.ts'
 
 // Discovery
 export {
   discoverFromGitHub,
   discoverFromAwesomeLists,
   discoverTools
-} from './discovery'
+} from './discovery.ts'
 export type {
   DiscoveryCallbacks,
   DiscoveryOptions
-} from './discovery'
+} from './discovery.ts'
 
 // Features
 export {
   extractToolFeatures,
   compareFeatures
-} from './features'
+} from './features.ts'
 export type {
   ExtractedFeatures
-} from './features'
+} from './features.ts'

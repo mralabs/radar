@@ -5,7 +5,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs'
-import type { Registry, Versions } from './types'
+import type { Registry, Versions } from './types.ts'
 
 /**
  * Write via tmp + rename so an interrupted process never leaves a

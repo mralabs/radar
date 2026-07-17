@@ -80,7 +80,10 @@ Two ways an eval lies green. Both have already happened here:
 - **Tokens are env-only** (`GITHUB_TOKEN`/`GH_TOKEN`). Never read secrets from
   files: `.radar/config.json` is git-tracked by design.
 - **Zero runtime dependencies.** Built-in `fetch` and `node:` modules only;
-  dev-deps are for typecheck/tests. The CLI must run with bare `bun`.
+  dev-deps are for typecheck/tests. The CLI must run with bare `bun` AND
+  bare `node` ≥ 22.18: relative imports carry explicit `.ts` extensions and
+  tsconfig's `erasableSyntaxOnly` blocks syntax node can't strip (enums,
+  namespaces) — don't undo either. bun stays the dev toolchain (`bun test`).
 - **Tests stay deterministic.** Stub `globalThis.fetch`; no live network, no
   `Date.now()` assertions. Inject fakes via the `fetcher` parameter pattern
   (see `checkUpdates`).

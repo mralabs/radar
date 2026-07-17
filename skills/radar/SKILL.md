@@ -15,7 +15,7 @@ All data lives in the consuming repo under `.radar/` (git-tracked JSON).
 Run every command from the repo root.
 
 ```bash
-bun <skill-dir>/scripts/radar.ts <command>   # requires bun
+bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn't installed
 ```
 
 ## First use in a repo: `/radar init`

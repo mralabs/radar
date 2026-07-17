@@ -4,8 +4,8 @@
  * Fetch package versions from Python Package Index.
  */
 
-import { fetchJson } from './client'
-import type { VersionResult, PyPIResponse } from '../types'
+import { fetchJson } from './client.ts'
+import type { VersionResult, PyPIResponse } from '../types.ts'
 
 const PYPI_API = 'https://pypi.org/pypi'
 

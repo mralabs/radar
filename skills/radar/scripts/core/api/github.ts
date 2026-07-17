@@ -4,8 +4,8 @@
  * Fetch releases, tags, and commits from GitHub.
  */
 
-import { fetchJson, type FetchOptions } from './client'
-import type { VersionResult, GitHubRelease, GitHubTag, GitHubCommit } from '../types'
+import { fetchJson, type FetchOptions } from './client.ts'
+import type { VersionResult, GitHubRelease, GitHubTag, GitHubCommit } from '../types.ts'
 
 export const GITHUB_API = 'https://api.github.com'
 

@@ -6,10 +6,10 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { getGitHubVersion, getGitHubReleasesSince, getGitHubCommits, getGitHubCommitsSince, extractGitHubRepo, getNPMRepoUrl, getPyPIRepoUrl } from './api'
-import { getPyPIVersion } from './api'
-import { getNPMVersion } from './api'
-import { getNuGetVersion } from './api'
+import { getGitHubVersion, getGitHubReleasesSince, getGitHubCommits, getGitHubCommitsSince, extractGitHubRepo, getNPMRepoUrl, getPyPIRepoUrl } from './api/index.ts'
+import { getPyPIVersion } from './api/index.ts'
+import { getNPMVersion } from './api/index.ts'
+import { getNuGetVersion } from './api/index.ts'
 import type {
   Tool,
   Registry,
@@ -26,8 +26,8 @@ import type {
   Suggestion,
   GitHubRelease,
   GitHubCommit
-} from './types'
-import { appendVersionHistory, getVersionChangeType } from './history'
+} from './types.ts'
+import { appendVersionHistory, getVersionChangeType } from './history.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Constants

@@ -10,8 +10,8 @@ import {
   saveRegistry,
   loadVersions,
   saveVersions
-} from '../skills/radar/scripts/core/registry'
-import type { Registry, Versions } from '../skills/radar/scripts/core/types'
+} from '../skills/radar/scripts/core/registry.ts'
+import type { Registry, Versions } from '../skills/radar/scripts/core/types.ts'
 
 const TEST_DIR = '/tmp/research-test'
 const REGISTRY_PATH = join(TEST_DIR, 'registry.json')

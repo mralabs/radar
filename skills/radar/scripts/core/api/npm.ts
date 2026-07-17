@@ -4,8 +4,8 @@
  * Fetch package versions from NPM registry.
  */
 
-import { fetchJson } from './client'
-import type { VersionResult, NPMResponse } from '../types'
+import { fetchJson } from './client.ts'
+import type { VersionResult, NPMResponse } from '../types.ts'
 
 const NPM_REGISTRY = 'https://registry.npmjs.org'
 

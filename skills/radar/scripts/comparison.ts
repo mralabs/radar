@@ -8,8 +8,8 @@
 import { existsSync, readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadRegistry } from './core'
-import type { ComparisonData, FeatureDefinition, FeatureValue, Registry, Tool } from './core'
+import { loadRegistry } from './core/index.ts'
+import type { ComparisonData, FeatureDefinition, FeatureValue, Registry, Tool } from './core/index.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Paths
