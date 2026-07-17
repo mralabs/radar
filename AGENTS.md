@@ -17,6 +17,7 @@ skills/radar/          the installable skill (only this dir reaches users)
 │       └── api/       one adapter per source: github, npm, pypi, nuget
 └── templates/         registry seed + weekly GitHub Actions workflow
 tests/                 unit tests — outside the skill so installs stay lean
+evals/                 agent-behavior evals — the SKILL.md layer tests can't reach
 ```
 
 Data always lives in the CONSUMING repo under `.radar/` (cwd-relative,
@@ -32,6 +33,26 @@ bun skills/radar/scripts/radar.ts help
 ```
 
 CI enforces both on every push/PR.
+
+Evals score SKILL.md's agent behavior — the half of radar no unit test can
+reach. They call real models, so they are **not** in CI: run them before a
+release or when SKILL.md changes.
+
+```bash
+# from the repo root, so the plugin auto-detects and the ablation arm resolves
+CLAUDE_CODE_WALNUT_SPIRE=1 claude plugin eval . \
+  --scaffold --allow-tools Bash --ablation with-without
+```
+
+`--scaffold` runs each case's `scaffold.sh` as you (we authored them; it only
+writes a fake repo into the sandbox cwd). `--threshold 0.8` gates on score.
+Roughly $0.30–0.70 per case per run, ×3 runs by default — cases are stochastic,
+so a single run proves little.
+
+Grade the **outcome, not the mechanism**. The first draft of `curated-registry`
+watched for a `radar.ts add` call and passed while the agent wrote the very same
+unapproved entries into `registry.json` with an ad-hoc `bun -e` script. Assert
+on the resulting file.
 
 ## Invariants — do not regress these
 

@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "claude_version": "2.1.212",
+  "started_at": "2026-07-17T08:13:06.540Z",
+  "duration_seconds": 68,
+  "cost_usd": 0.228154,
+  "partial": false,
+  "plugins": [],
+  "cases": [
+    {
+      "name": "warning-surfaced",
+      "dir": ".",
+      "source": "case_yaml",
+      "score": 1,
+      "pass_rate": 1,
+      "runs": [
+        {
+          "score": 1,
+          "turns": 5,
+          "cost_usd": 0.228154,
+          "judge_cost_usd": 0.002715,
+          "graders": [
+            {
+              "name": "flags-incomplete-range",
+              "passed": true,
+              "weight": 3,
+              "explanation": "judge votes: PASS PASS PASS",
+              "judge_votes": [
+                true,
+                true,
+                true
+              ],
+              "evidence": "Web access is blocked in this session, so I can't fill the gap myself. Here's where that leaves the report.\n\n## Radar report — claude-code v2.1.180 → v2.1.212\n\n⚠️ **Incomplete — covers 5 of 32 releases.** Only v2.1.208–212 are visible. **v2.1.181–207 (27 releases) are unaccounted for**, because radar couldn't match your anchor tag `v2.1.180` and fell back to the newest-5. Treat everything below as a partial picture.\n\n**Also worth noting:** the working directory here is empty, so I can't assess how any of this affects \"our repo\" — there's no code to check against. This is a changelog summary only.\n\n### What's in the visible window (v2.1.208–212)\n\n| Version | Change | Type |\n|---|---|---|\n| v2.1.212 | Plugin eval: score plugins against eval cases | feature |\n| v2.1.212 | Marketplace resolution for skills-dir plugins | fix |\n| v2.1.211 | `SessionEnd` hook now receives an exit reason | hooks (behavior) |\n| v2.1.210 | Faster transcript loading | perf |\n| v2.1.209 | Windows path handling in \n[…299 chars elided…]\nre fixes and perf.\n\n### The real risk is the invisible slice\n\n27 releases (v2.1.181–207) aren't shown. Any breaking change, deprecation, or behavior shift in that range would be missed entirely. I'd hold off on treating this as \"reviewed\" until that range is filled in.\n\n### To get a complete report\n\n- **Re-run with a valid anchor** — confirm the tag name; if the tags are named `claude-code-v2.1.180` or similar, the `v2.1.180` lookup would fail and trigger exactly this fallback. A tag-naming mismatch is the most likely cause of \"anchor not found.\"\n- Or bump radar's fetch depth so the range from your anchor to HEAD is fully paginated rather than capped at 5.\n- Or point me at the `skills/radar` skill (it's not in this cwd) and I can look at how it resolves anchors — the fallback-to-5 behavior swallowing a 27-release gap is arguably a bug worth fixing so the warning is harder to overlook.\n\nWant me to dig into the radar script itself, or do you have the full changelog range I can work from?"
+            },
+            {
+              "name": "no-false-completeness",
+              "passed": true,
+              "weight": 1,
+              "explanation": "pattern absent as expected"
+            }
+          ],
+          "trace_path": "/var/folders/gc/9n46p6vs7qg9kjt2t9y333mh0000gn/T/claude-eval-3AO5cm/out/trace.jsonl",
+          "error": null,
+          "started_at": "2026-07-17T08:13:06.550Z",
+          "duration_seconds": 68
+        }
+      ]
+    }
+  ]
+}

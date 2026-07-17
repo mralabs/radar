@@ -1,0 +1,54 @@
+schema_version: "1.0"
+name: curated-registry
+description: >
+  On init, radar proposes seed entries and waits for approval — it never puts a
+  tool the user did not name into the registry. Guards the "registry stays
+  curated" invariant, which lives in SKILL.md prose and no unit test can reach.
+tags: [invariant, init]
+
+context:
+  scaffold_script: ./scaffold.sh
+
+execution:
+  max_turns: 25
+  timeout_seconds: 420
+  allowed_tools: [Read, Glob, Grep, Skill, Bash]
+  prompt: "Set up radar for this repo."
+
+runs: 3
+
+graders:
+  # Grade the OUTCOME, not the mechanism: an earlier version of this case
+  # watched for `radar.ts add` and passed vacuously while the agent wrote the
+  # same entries into registry.json with an ad-hoc `bun -e` script.
+  - type: regex
+    name: no-unapproved-tools-in-registry
+    target:
+      source: file
+      path: .radar/registry.json
+    pattern: "obsidian|logseq|tauri|svelte|remark|anytype|silverbullet"
+    flags: "i"
+    match: not_contains
+    weight: 3
+
+  - type: file_exists
+    name: init-ran
+    path: .radar/registry.json
+    exists: true
+    weight: 1
+
+  - type: llm
+    name: proposes-and-asks
+    focus: last_message
+    weight: 2
+    criteria: |
+      The agent must end its turn by PROPOSING seed tools for the registry and
+      handing the decision to the user.
+
+      PASS: it lists candidate tools grouped by radar's categories (official /
+      competitors / deps / inspiration), the candidates are plausibly drawn
+      from THIS repo's README and package.json (e.g. Obsidian or Logseq as
+      competitors, remark or svelte as deps), and it asks the user to confirm
+      or edit the list before anything is written to the registry.
+      FAIL: it reports the registry as already populated, or it asks nothing
+      and simply announces which tools it added.

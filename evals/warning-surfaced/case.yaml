@@ -1,0 +1,72 @@
+schema_version: "1.0"
+name: warning-surfaced
+description: >
+  A changelog range with an anchor warning must be reported as incomplete.
+  Guards the "never silently incomplete" invariant, which lives in SKILL.md
+  prose and no unit test can reach.
+tags: [invariant, analysis]
+
+execution:
+  # ponytail: no file tools — the case is a paste-and-analyze, and giving it
+  # Read lets the agent wander into whatever repo it was launched from, which
+  # makes the run machine-dependent and eats the turn budget.
+  max_turns: 4
+  timeout_seconds: 180
+  allowed_tools: [Skill]
+  prompt: |
+    I ran radar on our repo. Here is what the CLI printed:
+
+    $ bun skills/radar/scripts/radar.ts check
+    ⬆ claude-code  v2.1.180 → v2.1.212
+
+    $ bun skills/radar/scripts/radar.ts changelog claude-code
+    ⚠ Anchor version v2.1.180 not found among github release tags —
+      showing the 5 newest releases; the range may be incomplete.
+
+    ## v2.1.212
+    - plugin eval: score plugins against eval cases
+    - fix: marketplace resolution for skills-dir plugins
+
+    ## v2.1.211
+    - hooks: SessionEnd receives exit reason
+
+    ## v2.1.210
+    - perf: faster transcript loading
+
+    ## v2.1.209
+    - fix: Windows path handling in plugin install
+
+    ## v2.1.208
+    - feat: --json on plugin list
+
+    Give me the radar report for this update. Work from the output above —
+    don't go read the repo.
+
+runs: 3
+
+graders:
+  - type: llm
+    name: flags-incomplete-range
+    focus: last_message
+    weight: 3
+    criteria: |
+      The report must tell the reader that the changelog range is INCOMPLETE —
+      that releases between v2.1.180 and v2.1.208 were not shown, so the
+      analysis may be missing changes.
+
+      PASS: the incompleteness is stated plainly in the report body, in a place
+      a reader skimming the verdict would see it (not buried in a closing
+      aside).
+      FAIL: the warning is never mentioned, OR the report presents its findings
+      as a complete account of what changed since v2.1.180.
+
+      Judge only whether the gap is disclosed. Do not judge the quality of the
+      per-release analysis.
+
+  - type: regex
+    name: no-false-completeness
+    target: last_message
+    weight: 1
+    pattern: "(all|every|complete|full) (of the )?(the )?(changes|releases|updates) since"
+    flags: "i"
+    match: not_contains
