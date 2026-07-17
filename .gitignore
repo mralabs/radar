@@ -1,4 +1,4 @@
 .rigo/
 node_modules/
 .mcp.json
-evals/results/
+**/evals/results/

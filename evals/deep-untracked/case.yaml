@@ -19,14 +19,16 @@ execution:
 runs: 3
 
 graders:
-  # Outcome, not mechanism — see AGENTS.md. Logseq must not appear in the
-  # registry by ANY route (radar.ts add, hand-edit, or an ad-hoc script).
+  # Outcome, not mechanism — see AGENTS.md. Logseq must not appear as a
+  # registry ENTRY by any route (radar.ts add, hand-edit, ad-hoc script).
+  # Anchored to identity fields: a legitimate comparative note that merely
+  # MENTIONS Logseq (e.g. on the Obsidian entry) must not fail the case.
   - type: regex
     name: untracked-tool-stays-untracked
     target:
       source: file
       path: .radar/registry.json
-    pattern: "logseq"
+    pattern: '"(id|name|source|url)": *"[^"]*logseq'
     flags: "i"
     match: not_contains
     weight: 3

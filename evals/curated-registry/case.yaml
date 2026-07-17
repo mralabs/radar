@@ -21,12 +21,14 @@ graders:
   # Grade the OUTCOME, not the mechanism: an earlier version of this case
   # watched for `radar.ts add` and passed vacuously while the agent wrote the
   # same entries into registry.json with an ad-hoc `bun -e` script.
+  # Anchored to identity fields so a mere mention in a note can't fail the
+  # case, and bare `remark` can't collide with English "remarkable".
   - type: regex
     name: no-unapproved-tools-in-registry
     target:
       source: file
       path: .radar/registry.json
-    pattern: "obsidian|logseq|tauri|svelte|remark|anytype|silverbullet"
+    pattern: '"(id|name|source|url)": *"[^"]*(obsidian|logseq|tauri|svelte|remark|anytype|silverbullet)'
     flags: "i"
     match: not_contains
     weight: 3
