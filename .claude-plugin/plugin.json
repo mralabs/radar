@@ -1,7 +1,7 @@
 {
   "name": "radar",
   "displayName": "Radar",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Track competitors, upstream tools and dependencies — release radar for your repo",
   "author": {
     "name": "mralabs"
