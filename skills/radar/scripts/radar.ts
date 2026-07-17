@@ -522,7 +522,11 @@ async function cmdInit(args: string[]): Promise<void> {
     log(GREEN, `Initialized ${RADAR_DIR}`)
     console.log('  registry.json  — tracked tools (seeded, edit freely)')
     console.log('  versions.json  — check state')
-    console.log('  config.json    — taskSink = where 🔥/💡 findings get filed (agent asks, then records it)')
+    console.log('  config.json    — where findings get filed (your agent asks, then records it)')
+    console.log('')
+    console.log('  Commit .radar/ — it is your tracking state: what you watch, which')
+    console.log('  versions you have already seen, where findings go. Every later run')
+    console.log('  reads it, and your team shares it. Delete it and tracking restarts.')
   }
 
   // Workflow installation — the workflow runs the radar composite action

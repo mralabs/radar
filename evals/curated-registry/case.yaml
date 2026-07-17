@@ -53,7 +53,10 @@ graders:
       from THIS repo's README and package.json (e.g. Obsidian or Logseq as
       competitors, remark or svelte as deps), it asks the user to confirm or
       edit the list before anything is written to the registry, AND it asks
-      where findings should land later (the `taskSink` question).
+      where findings should land later (the `taskSink` question) in words the
+      user can act on without a legend.
       FAIL: it reports the registry as already populated, or it asks nothing
       and simply announces which tools it added, or it never raises where
-      findings should go.
+      findings should go, OR it puts radar's internal vocabulary in front of
+      the user — asking where "🔥/💡" findings go (neither symbol has been
+      defined at this point) or naming "taskSink", "config.json" or "init".

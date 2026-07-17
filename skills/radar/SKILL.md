@@ -31,9 +31,11 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    - `deps` — libraries whose breaking changes hurt
    - `inspiration` — idea sources
 
-   In the same turn, ask where 🔥/💡 findings should land later — and
-   keep the plumbing invisible: the user never hears "taskSink", "config"
-   or "init". Look around FIRST (a task-board MCP tool, an issue tracker,
+   In the same turn, ask where findings should land later. 🔥/💡 is
+   shorthand for you, not vocabulary for the user — they have not seen it
+   defined. Ask with the meaning instead: changes that affect this repo,
+   ideas worth adopting. Keep the plumbing invisible too: the user never
+   hears "taskSink", "config" or "init". Look around FIRST (a task-board MCP tool, an issue tracker,
    a docs/specs dir, a TODO.md) and offer what you actually found as
    concrete choices in the user's own terms — "open tasks on your rigo
    board", "write a spec under docs/specs/" — plus the two always-valid
@@ -86,7 +88,8 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    absent means the question was never answered (an init that didn't
    finish, or a config from before `taskSink`) — don't guess a sink, and
    don't surface the plumbing: no "taskSink", no config paths, no "init
-   didn't finish". Do what init does: look around the repo, then ask in
+   didn't finish", and no 🔥/💡 in the question itself — say what they
+   mean. Do what init does: look around the repo, then ask in
    plain words with the concrete options you found ("open tasks on your
    board", "append to a markdown file", "just report — I won't ask
    again"). Record the answer silently so this is the last time.
