@@ -8,7 +8,7 @@ Published via the [Agent Skills spec](https://agentskills.io); installed with
 ## Layout
 
 ```
-skills/radar/          the installable skill (only this dir reaches users)
+skills/radar/          the installable skill (the only dir a skill install ships)
 ├── SKILL.md           agent behavior: init/check/analyze/mark-analyzed cycle
 ├── scripts/
 │   ├── radar.ts       thin CLI — command dispatch, printing, .radar/ paths
@@ -21,8 +21,12 @@ evals/                 agent-behavior evals — the SKILL.md layer tests can't r
 ```
 
 Data always lives in the CONSUMING repo under `.radar/` (cwd-relative,
-git-tracked JSON). This repo's root files (README, AGENTS.md, CI) are for
-development only — they are not part of the installed skill.
+git-tracked JSON). This repo's root files (README, AGENTS.md, CI, tests,
+evals) are for development only — but note the two channels differ:
+`gh skill install` ships only `skills/radar/`, while the **plugin channel
+clones the whole repo** into the user's plugin cache. Anything committed
+anywhere in this repo reaches plugin users; never commit fixtures or
+artifacts you wouldn't ship.
 
 ## Commands
 
@@ -47,9 +51,13 @@ CLAUDE_CODE_WALNUT_SPIRE=1 claude plugin eval . \
 `--scaffold` runs each case's `scaffold.sh` as you (we authored them; it only
 writes a fake repo into the sandbox cwd). `--threshold 0.8` gates on score.
 Roughly $0.20–0.50 per case per run, ×3 runs by default — cases are stochastic,
-so a single run proves little. `--ablation with-without` adds a no-plugin arm,
-but its Δ means little here: the baseline has no `.radar/` and cannot attempt
-the task at all. The signal is the plugin arm's own score.
+so a single run proves little. When iterating on one case, scope with
+`--case <name>` (and `--runs 1`) instead of paying for the full suite.
+`--ablation with-without` adds a no-plugin arm, but its Δ means little here:
+two of the scaffolds hand the baseline a populated `.radar/`, and where they
+don't (curated-registry) the baseline can't attempt the task at all — either
+way Δ doesn't measure "is radar good". The signal is the plugin arm's own
+score.
 
 Two ways an eval lies green. Both have already happened here:
 

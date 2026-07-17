@@ -52,17 +52,22 @@ interface RadarConfig {
   /**
    * Free text naming where findings get filed ("rigo board", "GitHub
    * issues"). Read by the agent, not the CLI. `null` = report-only;
-   * absent = the config predates the field.
+   * absent = the question was never answered (ask, don't guess).
    */
   taskSink?: string | null
 }
 
 function loadConfig(): RadarConfig {
   if (!existsSync(CONFIG_PATH)) return {}
+  // Parse errors must fail loud, like loadRegistry: silently returning {}
+  // makes `suggest` run as unconfigured instead of naming the broken file.
   try {
     return JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as RadarConfig
-  } catch {
-    return {}
+  } catch (err) {
+    throw new Error(
+      `${CONFIG_PATH} is corrupt (${err instanceof Error ? err.message : 'parse error'}). ` +
+        'Fix or delete it before continuing.'
+    )
   }
 }
 
@@ -802,7 +807,7 @@ function cmdInit(args: string[]): void {
     log(GREEN, `Initialized ${RADAR_DIR}`)
     console.log('  registry.json  — tracked tools (seeded, edit freely)')
     console.log('  versions.json  — check state')
-    console.log('  config.json    — selfId for `suggest`; taskSink for where findings get filed')
+    console.log('  config.json    — set selfId to this project\'s id (for `suggest`); taskSink = where findings get filed')
   }
 
   // Workflow installation — independent of data state and idempotent, so

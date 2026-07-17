@@ -68,8 +68,9 @@ bun <skill-dir>/scripts/radar.ts <command>   # requires bun
    items there — it names the sink in the user's own words, so honor it
    (`"rigo board"` → the board's MCP tools, `"GitHub issues"` → `gh`).
    `null` means the user already said report-only: skip this step. Field
-   absent (config predates `taskSink`) — fall back to whatever sink the
-   repo obviously has, or none.
+   absent means the question was never answered (an init that didn't
+   finish, or a config from before `taskSink`) — don't guess a sink; ask
+   now, and record the answer so this is the last time.
 
    Offer, never act: no task, issue or file gets created until the user
    says yes. A `taskSink` records WHERE findings go if the user wants
