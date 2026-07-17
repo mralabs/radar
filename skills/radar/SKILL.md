@@ -20,9 +20,7 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
 
 ## First use in a repo: `/radar init`
 
-1. Run `radar.ts init` (add `--workflow` if the user wants the weekly
-   GitHub Actions check — it maintains a rolling "Radar digest" issue
-   and comments when new updates land).
+1. Run `radar.ts init`.
 2. Read the project's context (README, CLAUDE.md/AGENTS.md, package
    manifest, roadmap docs) and **propose seed entries** per category:
    - `official` — tools the project builds on (for an agent-adjacent
@@ -31,7 +29,13 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    - `deps` — libraries whose breaking changes hurt
    - `inspiration` — idea sources
 
-   In the same turn, ask where findings should land later. 🔥/💡 is
+   In the same turn, offer the weekly automatic check — say what they'd
+   get, not the flag: a GitHub Actions workflow that runs the check every
+   week, keeps a rolling "Radar digest" issue up to date, and comments on
+   it when new updates land. The user won't know this exists unless you
+   offer it.
+
+   Also ask where findings should land later. 🔥/💡 is
    shorthand for you, not vocabulary for the user — they have not seen it
    defined. Ask with the meaning instead: changes that affect this repo,
    ideas worth adopting. Keep the plumbing invisible too: the user never
@@ -49,7 +53,9 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    script. Listing what you already added is not proposing.
 3. Once the user answers, add the approved entries via
    `radar.ts add <type> <source> --category X` (types: github, npm, pypi,
-   nuget). Then enrich each entry's `features` and `notes` fields in
+   nuget). If they said yes to the weekly check, run
+   `radar.ts init --workflow` — idempotent: existing `.radar/` data is
+   untouched, it only installs the workflow. Then enrich each entry's `features` and `notes` fields in
    `.radar/registry.json` — these drive analysis quality.
 4. Write `.radar/config.json`: `taskSink` = free text naming the sink the
    user picked (`"rigo board"`, `"GitHub issues"`, `"a spec file under

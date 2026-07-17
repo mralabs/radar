@@ -52,9 +52,11 @@ graders:
       competitors / deps / inspiration), the candidates are plausibly drawn
       from THIS repo's README and package.json (e.g. Obsidian or Logseq as
       competitors, remark or svelte as deps), it asks the user to confirm or
-      edit the list before anything is written to the registry, AND it asks
-      where findings should land later (the `taskSink` question) in words the
-      user can act on without a legend.
+      edit the list before anything is written to the registry, it offers the
+      optional weekly automatic check (described as what the user gets — a
+      weekly CI run keeping a digest issue updated — not as a "--workflow"
+      flag), AND it asks where findings should land later (the `taskSink`
+      question) in words the user can act on without a legend.
       FAIL: it reports the registry as already populated, or it asks nothing
       and simply announces which tools it added, or it never raises where
       findings should go, OR it puts radar's internal vocabulary in front of
