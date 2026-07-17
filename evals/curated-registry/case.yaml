@@ -43,12 +43,15 @@ graders:
     weight: 2
     criteria: |
       The agent must end its turn by PROPOSING seed tools for the registry and
-      handing the decision to the user.
+      handing the decision to the user — asking everything it needs in this one
+      turn, so the user answers once.
 
       PASS: it lists candidate tools grouped by radar's categories (official /
       competitors / deps / inspiration), the candidates are plausibly drawn
       from THIS repo's README and package.json (e.g. Obsidian or Logseq as
-      competitors, remark or svelte as deps), and it asks the user to confirm
-      or edit the list before anything is written to the registry.
+      competitors, remark or svelte as deps), it asks the user to confirm or
+      edit the list before anything is written to the registry, AND it asks
+      where findings should land later (the `taskSink` question).
       FAIL: it reports the registry as already populated, or it asks nothing
-      and simply announces which tools it added.
+      and simply announces which tools it added, or it never raises where
+      findings should go.

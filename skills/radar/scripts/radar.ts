@@ -49,6 +49,12 @@ const CONFIG_PATH = join(RADAR_DIR, 'config.json')
 interface RadarConfig {
   /** This repo's own id inside comparison tables (used by `suggest`) */
   selfId?: string
+  /**
+   * Free text naming where findings get filed ("rigo board", "GitHub
+   * issues"). Read by the agent, not the CLI. `null` = report-only;
+   * absent = the config predates the field.
+   */
+  taskSink?: string | null
 }
 
 function loadConfig(): RadarConfig {
@@ -796,7 +802,7 @@ function cmdInit(args: string[]): void {
     log(GREEN, `Initialized ${RADAR_DIR}`)
     console.log('  registry.json  — tracked tools (seeded, edit freely)')
     console.log('  versions.json  — check state')
-    console.log('  config.json    — set selfId to this project\'s id for `suggest`')
+    console.log('  config.json    — selfId for `suggest`; taskSink for where findings get filed')
   }
 
   // Workflow installation — independent of data state and idempotent, so

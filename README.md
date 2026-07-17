@@ -51,7 +51,12 @@ In any repo:
 /radar           # check → changelogs → analysis grounded in YOUR repo
 /radar add <url> # track a new tool
 /radar discover  # find new tools in your categories
+/radar deep <x>  # research one tool in depth — tracked or not
 ```
+
+Findings are reported, not filed. `/radar init` asks where 🔥/💡 items
+should go (a task board, GitHub issues, a spec file) and remembers it —
+but nothing gets created until you say so.
 
 Deterministic work (version checks against GitHub/npm/PyPI, changelog
 fetching, state) runs in the bundled CLI (`scripts/radar.ts`, zero deps,
@@ -68,7 +73,7 @@ notifications = your alerting, no infra; run summary in the Actions tab).
 .radar/
 ├── registry.json   # tracked tools: categories, features, curated notes
 ├── versions.json   # last-known versions + history
-└── config.json     # selfId (tokens are env-only: GITHUB_TOKEN)
+└── config.json     # selfId, taskSink (tokens are env-only: GITHUB_TOKEN)
 ```
 
 Set `GITHUB_TOKEN` env to lift the anonymous 60 req/h GitHub API limit.

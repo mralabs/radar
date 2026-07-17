@@ -31,15 +31,24 @@ bun <skill-dir>/scripts/radar.ts <command>   # requires bun
    - `deps` — libraries whose breaking changes hurt
    - `inspiration` — idea sources
 
+   In the same turn, ask where 🔥/💡 findings should land later. Look
+   around and suggest what you see — a task-board MCP tool, an issue
+   tracker, a TODO.md — rather than asking cold.
+
    Then **stop and end your turn with that proposal.** Init is a two-turn
-   flow: propose, wait, add. A tool the user has not named does not enter
+   flow: propose, wait, write. Ask everything you need in the first turn,
+   so the user answers once. A tool the user has not named does not enter
    the registry — not via `radar.ts add`, not via a hand-edit, not via a
    script. Listing what you already added is not proposing.
-3. Once the user approves, add the entries via
+3. Once the user answers, add the approved entries via
    `radar.ts add <type> <source> --category X` (types: github, npm, pypi).
    Then enrich each entry's `features` and `notes` fields in
    `.radar/registry.json` — these drive analysis quality.
-4. Set `selfId` in `.radar/config.json` to the project's own id.
+4. Write `.radar/config.json`: `selfId` = this project's own id, and
+   `taskSink` = free text naming the sink the user picked (`"rigo board"`,
+   `"GitHub issues"`, `"a spec file under docs/specs/"`). If they want
+   findings reported and nothing more, write `null` — that is an answer,
+   and recording it stops the main flow from asking again.
 
 ## Main flow: `/radar` (no args)
 
@@ -55,8 +64,16 @@ bun <skill-dir>/scripts/radar.ts <command>   # requires bun
      ✅ irrelevant (say so in one line, don't pad).
    - For 💡 items: state what the competitor did, how it maps to this
      project's architecture, and a concrete next step.
-4. If the project has a task board (MCP tools, issue tracker), offer to
-   create tasks for 🔥/💡 items — never create them unasked.
+4. Read `taskSink` from `.radar/config.json` and offer to file the 🔥/💡
+   items there — it names the sink in the user's own words, so honor it
+   (`"rigo board"` → the board's MCP tools, `"GitHub issues"` → `gh`).
+   `null` means the user already said report-only: skip this step. Field
+   absent (config predates `taskSink`) — fall back to whatever sink the
+   repo obviously has, or none.
+
+   Offer, never act: no task, issue or file gets created until the user
+   says yes. A `taskSink` records WHERE findings go if the user wants
+   them filed, not standing permission to file them.
 5. `radar.ts mark-analyzed <id>` for each tool you covered, so the next
    run only surfaces new material.
 
@@ -69,8 +86,8 @@ No boilerplate — a tool with nothing relevant gets one ✅ line.
 |-----|----|
 | `/radar help` | Explain how radar works in your own words: the init → check (NEW baseline) → changelog → analyze → mark-analyzed cycle, the optional weekly CI issue flow, and what `.radar/` holds. Use examples from THIS repo's registry. `radar.ts help` prints the CLI reference |
 | `/radar add <url or name>` | Infer type/source, `radar.ts add`, then fetch the README and fill `features`/`notes` in the registry |
-| `/radar discover` | Web-search for new tools in the registry's categories; propose candidates with stars + one-liner; add only what the user approves |
-| `/radar deep <id>` | Read the tool's README, docs, recent releases; update its `features`/`notes`; report how it compares to this project |
+| `/radar discover` | Web-search for new tools in the registry's categories; propose candidates with stars + one-liner; add only what the user approves. `discover` scans a category broadly; `deep` drills into one named tool |
+| `/radar deep <id or name/url>` | Read the tool's README, docs, recent releases; report how it compares to this project. **Tracked** (id matches the registry): also update its `features`/`notes`. **Untracked** (a name or URL): the research is identical — it runs off the web, not the registry — so do it anyway, then close with a reasoned add/skip recommendation and a category. Add only via `radar.ts add`, only if the user says yes |
 | `/radar list` / `show <id>` / `history <id>` | Run the CLI command, relay output |
 | `/radar suggest` | `radar.ts suggest` (needs comparison data + `selfId`) |
 
