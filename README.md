@@ -12,7 +12,7 @@ Claude Code, Codex, Cursor, Gemini CLI, Copilot, Antigravity.
 **Claude Code** — as a plugin (central install, per-project enable):
 
 ```
-/plugin marketplace add mralabs/radar
+/plugin marketplace add mralabs/claude-plugins
 /plugin install radar@mralabs
 ```
 
