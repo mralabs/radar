@@ -41,18 +41,27 @@ release or when SKILL.md changes.
 ```bash
 # from the repo root, so the plugin auto-detects and the ablation arm resolves
 CLAUDE_CODE_WALNUT_SPIRE=1 claude plugin eval . \
-  --scaffold --allow-tools Bash --ablation with-without
+  --scaffold --allow-tools Bash Write Edit WebFetch WebSearch
 ```
 
 `--scaffold` runs each case's `scaffold.sh` as you (we authored them; it only
 writes a fake repo into the sandbox cwd). `--threshold 0.8` gates on score.
-Roughly $0.30–0.70 per case per run, ×3 runs by default — cases are stochastic,
-so a single run proves little.
+Roughly $0.20–0.50 per case per run, ×3 runs by default — cases are stochastic,
+so a single run proves little. `--ablation with-without` adds a no-plugin arm,
+but its Δ means little here: the baseline has no `.radar/` and cannot attempt
+the task at all. The signal is the plugin arm's own score.
 
-Grade the **outcome, not the mechanism**. The first draft of `curated-registry`
-watched for a `radar.ts add` call and passed while the agent wrote the very same
-unapproved entries into `registry.json` with an ad-hoc `bun -e` script. Assert
-on the resulting file.
+Two ways an eval lies green. Both have already happened here:
+
+- **Grading the mechanism instead of the outcome.** The first draft of
+  `curated-registry` watched for a `radar.ts add` call and passed while the
+  agent wrote the very same unapproved entries into `registry.json` with an
+  ad-hoc `bun -e` script. Assert on the resulting file.
+- **Denying the tool the violation needs.** A case asserting the agent did NOT
+  file/add/write proves nothing if it could not have. Grant the tools the
+  violation would use — hence the `--allow-tools` list above. Watch the run
+  output for `denied tools (pass --allow-tools to grant)`: any case that prints
+  it scored on a fiction.
 
 ## Invariants — do not regress these
 
