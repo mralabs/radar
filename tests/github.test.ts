@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, afterEach } from 'bun:test'
-import { getGitHubReleasesSince, getGitHubCommitsSince, extractGitHubRepo, tagMatchesVersion } from '../skills/radar/scripts/core/api/github.ts'
+import { getGitHubReleasesSince, getGitHubCommitsSince, getLatestTagSha, getGitHubFileText, extractGitHubRepo, tagMatchesVersion } from '../skills/radar/scripts/core/api/github.ts'
 
 const realFetch = globalThis.fetch
 
@@ -214,5 +214,64 @@ describe('getGitHubCommitsSince', () => {
 
     expect(result.anchorFound).toBe(false)
     expect(result.commits).toHaveLength(0)
+  })
+})
+
+describe('getLatestTagSha', () => {
+  function stubTags(tags: Array<{ name: string; commit: { sha: string } }>): void {
+    globalThis.fetch = (async (_input: string | URL | Request) => Response.json(tags)) as typeof fetch
+  }
+
+  it('picks the highest semver, not the API order', async () => {
+    stubTags([
+      { name: 'v0.9.0', commit: { sha: 'old' } },
+      { name: 'v0.10.0', commit: { sha: 'newest' } },
+      { name: 'v0.2.0', commit: { sha: 'ancient' } }
+    ])
+
+    const result = await getLatestTagSha('o/r')
+
+    expect(result?.tag).toBe('v0.10.0')
+    expect(result?.sha).toBe('newest')
+  })
+
+  it('ignores non-release tags', async () => {
+    stubTags([
+      { name: 'nightly', commit: { sha: 'x' } },
+      { name: 'v1.0.0-rc.1', commit: { sha: 'y' } },
+      { name: 'v1.0.0', commit: { sha: 'release' } }
+    ])
+
+    expect((await getLatestTagSha('o/r'))?.sha).toBe('release')
+  })
+
+  it('returns null when no release tags exist', async () => {
+    stubTags([])
+    expect(await getLatestTagSha('o/r')).toBeNull()
+  })
+})
+
+describe('getGitHubFileText', () => {
+  it('fetches at the given ref and decodes base64', async () => {
+    let seen = ''
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      seen = String(input)
+      return Response.json({
+        content: Buffer.from('name: radar check').toString('base64'),
+        encoding: 'base64'
+      })
+    }) as typeof fetch
+
+    const text = await getGitHubFileText('o/r', 'action.yml', 'abc123')
+
+    expect(text).toBe('name: radar check')
+    expect(seen).toContain('/repos/o/r/contents/action.yml?ref=abc123')
+  })
+
+  it('returns null when the file does not exist at the ref', async () => {
+    globalThis.fetch = (async (_input: string | URL | Request) =>
+      new Response('not found', { status: 404 })) as typeof fetch
+
+    expect(await getGitHubFileText('o/r', 'action.yml', 'abc123')).toBeNull()
   })
 })

@@ -8,7 +8,7 @@
 
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync, cpSync, rmSync, renameSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs'
 import {
   TOOL_TYPES,
   loadRegistry,
@@ -18,7 +18,6 @@ import {
   checkUpdates,
   listTools,
   getChangelog,
-  suggestFeatures,
   addTool,
   removeTool,
   getToolDetails,
@@ -26,13 +25,12 @@ import {
   setGitHubToken,
   getGitHubToken,
   getGitHubRateLimit,
+  getGitHubFileText,
+  getLatestTagSha,
   getVersionHistory,
-  getBreakingChanges,
-  extractToolFeatures,
-  compareFeatures,
-  discoverTools
+  getBreakingChanges
 } from './core/index.ts'
-import type { Tool, ToolType, VersionHistoryEntry } from './core/index.ts'
+import type { ToolType } from './core/index.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Paths — all data lives in the consuming repo's .radar/ dir
@@ -43,33 +41,7 @@ const TEMPLATES_DIR = join(__dirname, '..', 'templates')
 const RADAR_DIR = join(process.cwd(), '.radar')
 const REGISTRY_PATH = join(RADAR_DIR, 'registry.json')
 const VERSIONS_PATH = join(RADAR_DIR, 'versions.json')
-const COMPARISONS_DIR = join(RADAR_DIR, 'comparisons')
 const CONFIG_PATH = join(RADAR_DIR, 'config.json')
-
-interface RadarConfig {
-  /** This repo's own id inside comparison tables (used by `suggest`) */
-  selfId?: string
-  /**
-   * Free text naming where findings get filed ("rigo board", "GitHub
-   * issues"). Read by the agent, not the CLI. `null` = report-only;
-   * absent = the question was never answered (ask, don't guess).
-   */
-  taskSink?: string | null
-}
-
-function loadConfig(): RadarConfig {
-  if (!existsSync(CONFIG_PATH)) return {}
-  // Parse errors must fail loud, like loadRegistry: silently returning {}
-  // makes `suggest` run as unconfigured instead of naming the broken file.
-  try {
-    return JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as RadarConfig
-  } catch (err) {
-    throw new Error(
-      `${CONFIG_PATH} is corrupt (${err instanceof Error ? err.message : 'parse error'}). ` +
-        'Fix or delete it before continuing.'
-    )
-  }
-}
 
 // ─────────────────────────────────────────────────────────────
 // Colors
@@ -376,6 +348,10 @@ async function cmdChangelog(args: string[]): Promise<void> {
       }
       console.log('')
     }
+  } else if (result.type === 'changelog-file' && result.markdown) {
+    log(YELLOW, `From ${result.path}:`)
+    console.log(result.markdown)
+    console.log('')
   } else if (result.type === 'commits' && result.commits) {
     log(YELLOW, 'Recent Commits:')
     for (const commit of result.commits) {
@@ -408,179 +384,6 @@ function cmdMarkAnalyzed(args: string[]): void {
     }
   } else {
     log(RED, result.error ?? 'Failed to mark as analyzed')
-  }
-}
-
-function cmdSuggest(): void {
-  const selfId = loadConfig().selfId
-  if (!selfId) {
-    log(YELLOW, 'No selfId in .radar/config.json — set it to enable feature suggestions')
-    return
-  }
-  const suggestions = suggestFeatures(COMPARISONS_DIR, selfId)
-
-  if (suggestions.length === 0) {
-    log(GREEN, `No missing features found! ${selfId} has all tracked features.`)
-    return
-  }
-
-  console.log('')
-  log(BLUE, 'Missing Features:')
-  console.log('')
-
-  // Group by category
-  const byCategory: Record<string, typeof suggestions> = {}
-  for (const s of suggestions) {
-    const cat = s.category ?? 'uncategorized'
-    if (!byCategory[cat]) byCategory[cat] = []
-    byCategory[cat].push(s)
-  }
-
-  for (const [category, items] of Object.entries(byCategory)) {
-    log(YELLOW, `${category}:`)
-    for (const item of items) {
-      console.log(`  • ${item.name}`)
-      if (item.description) console.log(`    ${item.description}`)
-      console.log(`    Available in: ${item.availableIn.join(', ')}`)
-    }
-    console.log('')
-  }
-}
-
-async function cmdExtract(args: string[]): Promise<void> {
-  const toolId = args[1]
-  const update = args.includes('--update')
-
-  if (!toolId) {
-    log(RED, 'Usage: bun radar.ts extract <tool-id> [--update]')
-    log(BLUE, 'Example: bun radar.ts extract spec-kit')
-    log(BLUE, '  --update: Update registry with extracted features')
-    return
-  }
-
-  const registry = loadRegistry(REGISTRY_PATH)
-  const tool = registry.tools.find(
-    t => t.id === toolId || t.name.toLowerCase().includes(toolId.toLowerCase())
-  )
-
-  if (!tool) {
-    log(RED, `Tool not found: ${toolId}`)
-    return
-  }
-
-  console.log('')
-  log(BLUE, `Extracting features from: ${tool.name}`)
-  console.log('')
-
-  const result = await extractToolFeatures(tool)
-
-  if (result.error) {
-    log(YELLOW, `Warning: ${result.error}`)
-    console.log('')
-  }
-
-  if (result.source === 'readme') {
-    log(GREEN, `Extracted ${result.features.length} features from README:`)
-    for (const feature of result.features) {
-      console.log(`  • ${feature}`)
-    }
-    console.log('')
-
-    // Compare with existing
-    const existing = tool.features ?? []
-    if (existing.length > 0) {
-      const comparison = compareFeatures(existing, result.features)
-      if (comparison.added.length > 0) {
-        log(GREEN, `New features found (${comparison.added.length}):`)
-        for (const f of comparison.added) {
-          console.log(`  + ${f}`)
-        }
-      }
-      if (comparison.removed.length > 0) {
-        log(YELLOW, `Features not in README (${comparison.removed.length}):`)
-        for (const f of comparison.removed) {
-          console.log(`  - ${f}`)
-        }
-      }
-      console.log('')
-    }
-
-    // Update registry if requested
-    if (update) {
-      tool.features = result.features
-      saveRegistry(REGISTRY_PATH, registry)
-      log(GREEN, 'Registry updated with extracted features')
-    }
-  } else {
-    log(YELLOW, 'Using existing manual features:')
-    for (const feature of result.features) {
-      console.log(`  • ${feature}`)
-    }
-  }
-  console.log('')
-}
-
-function cmdExport(args: string[]): void {
-  const format = getArg(args, '--format') ?? 'json'
-  const output = getArg(args, '--output')
-
-  const registry = loadRegistry(REGISTRY_PATH)
-  const versions = loadVersions(VERSIONS_PATH)
-
-  // Build export data
-  const exportData = {
-    exportedAt: new Date().toISOString(),
-    registry: {
-      version: registry.version,
-      categories: registry.categories,
-      toolCount: registry.tools.length,
-      tools: registry.tools.map(tool => {
-        const vd = versions.tools[tool.id] ?? {}
-        return {
-          id: tool.id,
-          name: tool.name,
-          category: tool.category,
-          type: tool.type,
-          source: tool.source,
-          url: tool.url,
-          currentVersion: vd.currentVersion ?? null,
-          lastAnalyzedVersion: vd.lastAnalyzedVersion ?? null,
-          latestReleaseDate: vd.latestReleaseDate ?? null,
-          lastChecked: vd.lastChecked ?? null,
-          historyCount: vd.history?.length ?? 0,
-          hasUpdate: vd.currentVersion && vd.lastAnalyzedVersion && vd.currentVersion !== vd.lastAnalyzedVersion,
-          features: tool.features ?? []
-        }
-      })
-    },
-    summary: {
-      totalTools: registry.tools.length,
-      byCategory: Object.entries(
-        registry.tools.reduce((acc, t) => {
-          acc[t.category] = (acc[t.category] ?? 0) + 1
-          return acc
-        }, {} as Record<string, number>)
-      ),
-      byType: Object.entries(
-        registry.tools.reduce((acc, t) => {
-          acc[t.type] = (acc[t.type] ?? 0) + 1
-          return acc
-        }, {} as Record<string, number>)
-      ),
-      withUpdates: registry.tools.filter(t => {
-        const vd = versions.tools[t.id]
-        return vd?.currentVersion && vd?.lastAnalyzedVersion && vd.currentVersion !== vd.lastAnalyzedVersion
-      }).length
-    }
-  }
-
-  const jsonOutput = JSON.stringify(exportData, null, 2)
-
-  if (output) {
-    writeFileSync(output, jsonOutput)
-    log(GREEN, `Exported to: ${output}`)
-  } else {
-    console.log(jsonOutput)
   }
 }
 
@@ -660,89 +463,6 @@ async function cmdRateLimit(): Promise<void> {
   }
 }
 
-async function cmdDiscover(args: string[]): Promise<void> {
-  const registry = loadRegistry(REGISTRY_PATH)
-
-  const minStarsArg = getArg(args, '--min-stars')
-  const minStars = minStarsArg ? parseInt(minStarsArg, 10) : 500
-  const sourceArg = getArg(args, '--source')
-  const validSources = ['github', 'awesome', 'all'] as const
-
-  if (sourceArg && !validSources.includes(sourceArg as typeof validSources[number])) {
-    log(RED, `Invalid source: ${sourceArg}`)
-    log(BLUE, 'Valid sources: github, awesome, all')
-    return
-  }
-
-  const source = (sourceArg as 'github' | 'awesome' | 'all') ?? 'all'
-
-  console.log('')
-  log(BLUE, `Tool Discovery (min ${minStars}★)`)
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('')
-
-  const results = await discoverTools(
-    registry,
-    { minStars, source },
-    {
-      onQueryStart: (query) => process.stdout.write(`  Searching: ${query}... `),
-      onQueryResult: (_query, count) => console.log(`${count} results`),
-      onAwesomeListStart: (repo) => process.stdout.write(`  Parsing: ${repo}... `),
-      onAwesomeListResult: (_repo, count) => console.log(`${count} new tools`),
-      onStarCheck: (repo, stars) => {
-        if (stars >= minStars) {
-          process.stdout.write(`    ${GREEN}★${NC} `)
-        }
-      }
-    }
-  )
-
-  console.log('')
-
-  if (results.length === 0) {
-    log(GREEN, 'No new tools found. Registry is comprehensive!')
-    console.log('')
-    return
-  }
-
-  // Group by source
-  const fromGitHub = results.filter(r => r.source === 'github-search')
-  const fromAwesome = results.filter(r => r.source === 'awesome-list')
-
-  if (fromGitHub.length > 0) {
-    log(YELLOW, 'From GitHub Search:')
-    for (const r of fromGitHub) {
-      const starsStr = r.stars >= 1000
-        ? `${(r.stars / 1000).toFixed(1)}k`
-        : String(r.stars)
-      console.log(`  ★ ${starsStr.padStart(6)}  ${r.name} (${r.repo})`)
-      if (r.description) {
-        console.log(`           "${r.description.slice(0, 70)}${r.description.length > 70 ? '...' : ''}"`)
-      }
-    }
-    console.log('')
-  }
-
-  if (fromAwesome.length > 0) {
-    log(YELLOW, 'From Awesome Lists:')
-    for (const r of fromAwesome) {
-      const starsStr = r.stars >= 1000
-        ? `${(r.stars / 1000).toFixed(1)}k`
-        : String(r.stars)
-      console.log(`  ★ ${starsStr.padStart(6)}  ${r.name} (${r.repo})`)
-      if (r.awesomeListSource) {
-        console.log(`           Source: ${r.awesomeListSource}`)
-      }
-    }
-    console.log('')
-  }
-
-  console.log('════════════════════════════════════════════════════')
-  log(GREEN, `Found ${results.length} new tools (not in registry).`)
-  console.log(`To add: bun radar.ts add github owner/repo`)
-  console.log('')
-}
-
 function showHelp(): void {
   console.log('')
   log(BLUE, 'radar — ecosystem tracking for the current repo')
@@ -755,8 +475,8 @@ function showHelp(): void {
   console.log('  1. init            .radar/ created; your agent proposes what to track')
   console.log('  2. check           fetches versions; first sighting = NEW baseline,')
   console.log('                     later runs report UPDATE against last analysis')
-  console.log('  3. changelog       available releases/commits for the unanalyzed')
-  console.log('                     range — warns when the range may be incomplete')
+  console.log('  3. changelog       releases (or CHANGELOG.md, or commits) for the')
+  console.log('                     unanalyzed range — warns when it may be incomplete')
   console.log('  4. (agent reads them, compares against this repo, recommends)')
   console.log('  5. mark-analyzed   moves the anchor so next run only shows new items')
   console.log('')
@@ -770,14 +490,9 @@ function showHelp(): void {
   console.log('                                        Track a new tool')
   console.log('  remove <tool-id>                      Untrack (clears its state too)')
   console.log('  show <tool-id>                        Tool details')
-  console.log('  changelog <tool-id> [--json]          Releases/commits since last analysis; warns if incomplete')
+  console.log('  changelog <tool-id> [--json]          Releases/changelog/commits since last analysis; warns if incomplete')
   console.log('  mark-analyzed <tool-id> [version]     Record analysis done up to a version')
-  console.log('  suggest                               Features others have, this repo lacks')
   console.log('  history <tool-id>                     Version history with breaking flags')
-  console.log('  discover [--min-stars 500] [--source github|awesome|all]')
-  console.log('                                        Find new candidate tools')
-  console.log('  extract <tool-id> [--update]          Pull features from a README')
-  console.log('  export [--output file.json]           Dump data as JSON')
   console.log('  rate-limit                            GitHub API quota status')
   console.log('')
   console.log(`Types: ${TOOL_TYPES.join(', ')}`)
@@ -791,7 +506,7 @@ function showHelp(): void {
 // Init
 // ─────────────────────────────────────────────────────────────
 
-function cmdInit(args: string[]): void {
+async function cmdInit(args: string[]): Promise<void> {
   // Data initialization — only when missing, never touches existing data
   if (existsSync(REGISTRY_PATH)) {
     log(YELLOW, `.radar/ already initialized at ${RADAR_DIR} — data untouched`)
@@ -802,41 +517,63 @@ function cmdInit(args: string[]): void {
       VERSIONS_PATH,
       JSON.stringify({ lastChecked: null, tools: {} }, null, 2) + '\n'
     )
-    writeFileSync(CONFIG_PATH, JSON.stringify({ selfId: null }, null, 2) + '\n')
+    writeFileSync(CONFIG_PATH, JSON.stringify({}, null, 2) + '\n')
 
     log(GREEN, `Initialized ${RADAR_DIR}`)
     console.log('  registry.json  — tracked tools (seeded, edit freely)')
     console.log('  versions.json  — check state')
-    console.log('  config.json    — set selfId to this project\'s id (for `suggest`); taskSink = where findings get filed')
+    console.log('  config.json    — taskSink = where 🔥/💡 findings get filed (agent asks, then records it)')
   }
 
-  // Workflow installation — independent of data state and idempotent, so
-  // `init --workflow` also works later and refreshes the vendored CLI
+  // Workflow installation — the workflow runs the radar composite action
+  // pinned to a commit SHA, so nothing floating ever executes in CI
   if (args.includes('--workflow')) {
     const wfDir = join(process.cwd(), '.github', 'workflows')
     const wfPath = join(wfDir, 'radar.yml')
-    if (existsSync(wfPath)) {
+    // Pre-0.5 workflows run the CLI vendored at .github/radar/ — that
+    // dir must NOT be called deletable while such a workflow still uses it
+    const wfIsLegacy =
+      existsSync(wfPath) && readFileSync(wfPath, 'utf8').includes('.github/radar/')
+    if (wfIsLegacy) {
+      log(YELLOW, `${wfPath} is the pre-0.5 workflow (runs the vendored CLI).`)
+      console.log('  To switch to the SHA-pinned action: delete BOTH that file and')
+      console.log('  .github/radar/, then re-run `init --workflow`.')
+    } else if (existsSync(wfPath)) {
       log(YELLOW, `${wfPath} exists — not overwritten (delete it to regenerate)`)
     } else {
+      // Fail loud: a workflow with an unresolved placeholder would just
+      // break in CI later, where nobody is watching.
+      const pin = await getLatestTagSha('mralabs/radar')
+      if (!pin) {
+        throw new Error(
+          'Could not resolve the latest radar release SHA from the GitHub API — ' +
+            'check network/GITHUB_TOKEN and re-run `init --workflow`.'
+        )
+      }
+      // The latest tag and this skill's version are independent — a tag
+      // that predates action.yml would pin a workflow that dies on Monday
+      // cron. Verify the action exists at the resolved commit.
+      if (!(await getGitHubFileText('mralabs/radar', 'action.yml', pin.sha))) {
+        throw new Error(
+          `Latest radar release ${pin.tag} has no action.yml — a workflow pinned there ` +
+            'would fail in CI. Re-run `init --workflow` after the next radar release.'
+        )
+      }
+      const workflow = readFileSync(join(TEMPLATES_DIR, 'radar.yml'), 'utf8')
+        .replace('__RADAR_SHA__', pin.sha)
+        .replace('__RADAR_TAG__', pin.tag)
       mkdirSync(wfDir, { recursive: true })
-      copyFileSync(join(TEMPLATES_DIR, 'radar.yml'), wfPath)
+      writeFileSync(wfPath, workflow)
       log(GREEN, `Installed weekly check workflow: ${wfPath}`)
+      console.log(`  Runs mralabs/radar@${pin.sha.slice(0, 7)} (${pin.tag}) — SHA-pinned.`)
     }
 
-    // Vendor the CLI so CI never fetches remote code (supply-chain: the
-    // exact scripts you review here are the ones the workflow runs).
-    // Stage + swap so a refresh never leaves stale files from old versions.
-    const vendorDir = join(process.cwd(), '.github', 'radar')
-    const staging = `${vendorDir}.staging`
-    rmSync(staging, { recursive: true, force: true })
-    cpSync(__dirname, staging, {
-      recursive: true,
-      filter: (src) => !src.endsWith('.test.ts')
-    })
-    rmSync(vendorDir, { recursive: true, force: true })
-    renameSync(staging, vendorDir)
-    log(GREEN, `Vendored radar CLI: ${vendorDir}`)
-    console.log('  CI runs this copy — re-run `init --workflow` after skill updates.')
+    // Pre-0.5 versions vendored the CLI into the consuming repo. Only
+    // call it deletable once no workflow references it anymore.
+    const legacyVendorDir = join(process.cwd(), '.github', 'radar')
+    if (existsSync(legacyVendorDir) && !wfIsLegacy) {
+      log(YELLOW, `${legacyVendorDir} is the old vendored CLI — no longer used, safe to delete.`)
+    }
   }
 }
 
@@ -864,7 +601,7 @@ async function main(): Promise<void> {
 
   switch (command) {
     case 'init':
-      cmdInit(args)
+      await cmdInit(args)
       break
 
     case 'check':
@@ -896,10 +633,6 @@ async function main(): Promise<void> {
       cmdMarkAnalyzed(args)
       break
 
-    case 'suggest':
-      cmdSuggest()
-      break
-
     case 'rate-limit':
     case 'ratelimit':
       await cmdRateLimit()
@@ -907,18 +640,6 @@ async function main(): Promise<void> {
 
     case 'history':
       cmdHistory(args)
-      break
-
-    case 'export':
-      cmdExport(args)
-      break
-
-    case 'extract':
-      await cmdExtract(args)
-      break
-
-    case 'discover':
-      await cmdDiscover(args)
       break
 
     default:

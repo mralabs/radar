@@ -27,7 +27,6 @@ export interface Tool {
   stars?: number
   features?: string[]
   tags?: string[]
-  comparison?: string
   /** Curated analysis context — the agent reads and enriches this */
   notes?: string
 }
@@ -154,17 +153,6 @@ export interface ListOptions {
   minStars?: number
 }
 
-export interface DiscoveryResult {
-  source: 'github-search' | 'awesome-list'
-  name: string
-  repo: string
-  url: string
-  stars: number
-  description: string
-  alreadyTracked: boolean
-  awesomeListSource?: string
-}
-
 // ─────────────────────────────────────────────────────────────
 // Result Types
 // ─────────────────────────────────────────────────────────────
@@ -196,35 +184,4 @@ export interface CheckResult {
   upToDate: UpToDateInfo[]
   baselined: BaselineInfo[]
   errors: ErrorInfo[]
-}
-
-// ─────────────────────────────────────────────────────────────
-// Comparison Types
-// ─────────────────────────────────────────────────────────────
-
-export interface FeatureValue {
-  /** true = has feature; a string is a display note, NOT feature presence */
-  value: boolean | string
-  notes?: string
-}
-
-export interface FeatureDefinition {
-  id: string
-  name: string
-  description?: string
-}
-
-export interface ComparisonData {
-  category?: string
-  description?: string
-  features?: FeatureDefinition[]
-  tools?: Record<string, Record<string, FeatureValue>>
-}
-
-export interface Suggestion {
-  feature: string
-  name: string
-  description: string
-  availableIn: string[]
-  category?: string
 }

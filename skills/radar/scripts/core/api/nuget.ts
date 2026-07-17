@@ -53,3 +53,33 @@ export async function getNuGetVersion(packageId: string): Promise<VersionResult>
     }
   }
 }
+
+interface NuGetRegistrationLeaf {
+  catalogEntry?: { projectUrl?: string; repositoryUrl?: string }
+}
+
+interface NuGetRegistrationPage {
+  items?: NuGetRegistrationLeaf[]
+  '@id'?: string
+}
+
+/**
+ * Resolve the GitHub repo behind a NuGet package (catalogEntry projectUrl).
+ * Registration pages either inline their leaves or point to a page
+ * document — one extra fetch covers the latter.
+ */
+export async function getNuGetRepoUrl(packageId: string): Promise<string | null> {
+  try {
+    const index = await fetchJson<{ items?: NuGetRegistrationPage[] }>(
+      `https://api.nuget.org/v3/registration5-semver1/${packageId.toLowerCase()}/index.json`
+    )
+    let page = index?.items?.at(-1)
+    if (page && !page.items && page['@id']) {
+      page = (await fetchJson<NuGetRegistrationPage>(page['@id'])) ?? undefined
+    }
+    const entry = page?.items?.at(-1)?.catalogEntry
+    return entry?.repositoryUrl ?? entry?.projectUrl ?? null
+  } catch {
+    return null
+  }
+}

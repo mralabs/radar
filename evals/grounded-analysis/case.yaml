@@ -1,0 +1,77 @@
+schema_version: "1.0"
+name: grounded-analysis
+description: >
+  The heart of the main flow: before claiming a release matters, the agent
+  must read THIS repo and anchor every 🔥/💡 classification in something
+  real (roadmap item, architecture fact). Guards SKILL.md's "ground it in
+  this project" instruction, which no unit test can reach.
+tags: [invariant, analysis]
+
+context:
+  scaffold_script: ./scaffold.sh
+
+execution:
+  # Read/Glob/Grep so the repo CAN be read — the failure mode under test is
+  # not reading it. No Bash: the CLI output is pasted, and Bash would let
+  # the run hit the network.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Skill, Read, Glob, Grep]
+  prompt: |
+    I ran radar on this repo (it's checked out here). CLI output:
+
+    $ bun radar.ts check
+    ⬆ Obsidian  1.8.10 → 1.9.0
+
+    $ bun radar.ts changelog obsidianmd-obsidian-releases
+
+    ## v1.9.0 (2026-07-10)
+    - Obsidian Sync: end-to-end encryption is now enabled by default for
+      all vaults, including free trial vaults
+    - New core plugin "Bases": table and database views over note
+      properties, filterable and embeddable in notes
+    - Windows ARM64 installer is now code-signed
+
+    Give me the radar report for this update. The checks have already run —
+    don't re-run the CLI, work from the output above. Analysis and
+    mark-analyzed bookkeeping can wait until after I read the report.
+
+runs: 3
+
+graders:
+  - type: llm
+    name: claims-grounded-in-repo
+    focus: last_message
+    weight: 3
+    criteria: |
+      Every item the report classifies as mattering (🔥 affects us / 💡
+      worth adopting) must be anchored in something that actually exists in
+      THIS repo — e.g. the sync item mapped to the roadmap's committed
+      "Device sync" feature (docs/ROADMAP.md), or the "Bases" plugin mapped
+      to the roadmap's "table/database views over frontmatter" exploration.
+
+      PASS: each 🔥/💡 classification cites a specific project fact
+      (roadmap entry, README positioning, or file) that really is in the
+      scaffold repo, and the connection drawn is correct.
+      FAIL: any 🔥/💡 item is justified only generically ("relevant for
+      note-taking apps", "sync is important") with no repo-specific anchor,
+      OR the report cites roadmap/repo facts that do not exist
+      (hallucinated grounding), OR the report never engages with the repo's
+      roadmap at all.
+
+      Judge only the grounding. Do not judge report length or whether
+      mark-analyzed was discussed.
+
+  - type: llm
+    name: irrelevant-item-stays-short
+    focus: last_message
+    weight: 1
+    criteria: |
+      The "Windows ARM64 installer is now code-signed" item is irrelevant to
+      this repo (a Tauri/Svelte app with no Windows-ARM-specific concerns in
+      README or roadmap).
+
+      PASS: the report marks it irrelevant (✅ or equivalent) in about one
+      line, without padding.
+      FAIL: the report inflates it into a substantive finding, or pads it
+      with speculative relevance.

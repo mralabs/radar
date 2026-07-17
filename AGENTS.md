@@ -8,11 +8,11 @@ Published via the [Agent Skills spec](https://agentskills.io); installed with
 ## Layout
 
 ```
+action.yml             composite action consumers run SHA-pinned in weekly CI
 skills/radar/          the installable skill (the only dir a skill install ships)
 ├── SKILL.md           agent behavior: init/check/analyze/mark-analyzed cycle
 ├── scripts/
 │   ├── radar.ts       thin CLI — command dispatch, printing, .radar/ paths
-│   ├── comparison.ts  feature-comparison report generator
 │   └── core/          self-contained domain logic (no imports outside core/)
 │       └── api/       one adapter per source: github, npm, pypi, nuget
 └── templates/         registry seed + weekly GitHub Actions workflow
@@ -87,8 +87,11 @@ Two ways an eval lies green. Both have already happened here:
 - **Tests stay deterministic.** Stub `globalThis.fetch`; no live network, no
   `Date.now()` assertions. Inject fakes via the `fetcher` parameter pattern
   (see `checkUpdates`).
-- **CI never fetches remote code.** The consumer workflow runs the CLI copy
-  vendored by `init --workflow`; actions stay pinned to commit SHAs.
+- **CI executes only SHA-pinned code.** The consumer workflow runs the
+  radar composite action (`action.yml`) at a commit SHA resolved by
+  `init --workflow`; actions stay pinned to commit SHAs. No floating refs
+  (`@main`, tags) — ever. (Pre-0.5 vendored the CLI into `.github/radar/`
+  instead; that dir is legacy and init tells users it's safe to delete.)
 - **Registry stays curated.** Agent flows may propose tools or tasks but never
   add them without user approval (see SKILL.md).
 

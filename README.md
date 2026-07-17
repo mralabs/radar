@@ -59,14 +59,27 @@ Findings are reported, not filed. `/radar init` asks where 🔥/💡 items
 should go (a task board, GitHub issues, a spec file) and remembers it —
 but nothing gets created until you say so.
 
-Deterministic work (version checks against GitHub/npm/PyPI, changelog
-fetching, state) runs in the bundled CLI (`scripts/radar.ts`, zero deps,
-bun or node). The agent does the judgment: compares changes against your
-roadmap and code, produces recommendations.
+Deterministic work (version checks against GitHub/npm/PyPI/NuGet,
+changelog fetching, state) runs in the bundled CLI (`scripts/radar.ts`,
+zero deps, bun or node). The agent does the judgment: compares changes
+against your roadmap and code, produces recommendations. Changelogs come
+from GitHub releases, falling back to the repo's `CHANGELOG.md`, then to
+commits — always flagging when a range may be incomplete.
 
 Optional weekly check via GitHub Actions: `/radar init --workflow` — keeps
-a rolling "Radar digest" issue and comments when new updates land (GitHub
-notifications = your alerting, no infra; run summary in the Actions tab).
+a rolling "Radar digest" issue and comments when new updates (or check
+errors — a silently failing source is a finding too) land. GitHub
+notifications = your alerting, no infra; run summary in the Actions tab.
+The installed workflow is two `uses:` lines running the radar composite
+action pinned to a commit SHA — nothing floating executes in your CI, and
+Dependabot's `github-actions` ecosystem will PR pin updates if enabled.
+
+Want the analysis automated too? The installed `.github/workflows/radar.yml`
+ends with a commented-out job step running
+[claude-code-action](https://github.com/anthropics/claude-code-action) that
+reads the updates and comments its analysis on the digest issue. Uncomment
+it, add an `ANTHROPIC_API_KEY` repo secret, and pin the action to a
+reviewed commit SHA (same supply-chain policy as the rest of the workflow).
 
 ## Data layout (in the consuming repo)
 
@@ -74,7 +87,7 @@ notifications = your alerting, no infra; run summary in the Actions tab).
 .radar/
 ├── registry.json   # tracked tools: categories, features, curated notes
 ├── versions.json   # last-known versions + history
-└── config.json     # selfId, taskSink (tokens are env-only: GITHUB_TOKEN)
+└── config.json     # taskSink — where 🔥/💡 findings get filed (tokens are env-only: GITHUB_TOKEN)
 ```
 
 Set `GITHUB_TOKEN` env to lift the anonymous 60 req/h GitHub API limit.

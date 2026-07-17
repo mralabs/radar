@@ -31,9 +31,14 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    - `deps` — libraries whose breaking changes hurt
    - `inspiration` — idea sources
 
-   In the same turn, ask where 🔥/💡 findings should land later. Look
-   around and suggest what you see — a task-board MCP tool, an issue
-   tracker, a TODO.md — rather than asking cold.
+   In the same turn, ask where 🔥/💡 findings should land later — and
+   keep the plumbing invisible: the user never hears "taskSink", "config"
+   or "init". Look around FIRST (a task-board MCP tool, an issue tracker,
+   a docs/specs dir, a TODO.md) and offer what you actually found as
+   concrete choices in the user's own terms — "open tasks on your rigo
+   board", "write a spec under docs/specs/" — plus the two always-valid
+   defaults: "append to a markdown file in the repo" and "just report,
+   file nothing". Never ask cold with abstract vocabulary.
 
    Then **stop and end your turn with that proposal.** Init is a two-turn
    flow: propose, wait, write. Ask everything you need in the first turn,
@@ -41,14 +46,14 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    the registry — not via `radar.ts add`, not via a hand-edit, not via a
    script. Listing what you already added is not proposing.
 3. Once the user answers, add the approved entries via
-   `radar.ts add <type> <source> --category X` (types: github, npm, pypi).
-   Then enrich each entry's `features` and `notes` fields in
+   `radar.ts add <type> <source> --category X` (types: github, npm, pypi,
+   nuget). Then enrich each entry's `features` and `notes` fields in
    `.radar/registry.json` — these drive analysis quality.
-4. Write `.radar/config.json`: `selfId` = this project's own id, and
-   `taskSink` = free text naming the sink the user picked (`"rigo board"`,
-   `"GitHub issues"`, `"a spec file under docs/specs/"`). If they want
-   findings reported and nothing more, write `null` — that is an answer,
-   and recording it stops the main flow from asking again.
+4. Write `.radar/config.json`: `taskSink` = free text naming the sink the
+   user picked (`"rigo board"`, `"GitHub issues"`, `"a spec file under
+   docs/specs/"`). If they want findings reported and nothing more, write
+   `null` — that is an answer, and recording it stops the main flow from
+   asking again.
 
 ## Main flow: `/radar` (no args)
 
@@ -63,14 +68,26 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    - Classify: 🔥 affects us directly / 💡 feature worth adopting /
      ✅ irrelevant (say so in one line, don't pad).
    - For 💡 items: state what the competitor did, how it maps to this
-     project's architecture, and a concrete next step.
+     project's architecture, and a concrete next step. Exploring to get
+     there is fine — download a package to read its source, prototype to
+     verify a claim — but do it in a temp dir OUTSIDE the repo, never in
+     the working tree. Needs this repo's own code? Use a temp git
+     worktree (`git worktree add /tmp/radar-exp && …` , remove after) —
+     full repo, zero footprint in the user's checkout. Cleanup-later on
+     the working tree is not a plan (interrupted turns leave junk, and
+     undo can eat the user's uncommitted changes); the repo only ever
+     receives the report, and implementation starts when the user asks.
 4. Read `taskSink` from `.radar/config.json` and offer to file the 🔥/💡
    items there — it names the sink in the user's own words, so honor it
    (`"rigo board"` → the board's MCP tools, `"GitHub issues"` → `gh`).
    `null` means the user already said report-only: skip this step. Field
    absent means the question was never answered (an init that didn't
-   finish, or a config from before `taskSink`) — don't guess a sink; ask
-   now, and record the answer so this is the last time.
+   finish, or a config from before `taskSink`) — don't guess a sink, and
+   don't surface the plumbing: no "taskSink", no config paths, no "init
+   didn't finish". Do what init does: look around the repo, then ask in
+   plain words with the concrete options you found ("open tasks on your
+   board", "append to a markdown file", "just report — I won't ask
+   again"). Record the answer silently so this is the last time.
 
    Offer, never act: no task, issue or file gets created until the user
    says yes. A `taskSink` records WHERE findings go if the user wants
@@ -88,12 +105,19 @@ No boilerplate — a tool with nothing relevant gets one ✅ line.
 | `/radar help` | Explain how radar works in your own words: the init → check (NEW baseline) → changelog → analyze → mark-analyzed cycle, the optional weekly CI issue flow, and what `.radar/` holds. Use examples from THIS repo's registry. `radar.ts help` prints the CLI reference |
 | `/radar add <url or name>` | Infer type/source, `radar.ts add`, then fetch the README and fill `features`/`notes` in the registry |
 | `/radar discover` | Web-search for new tools in the registry's categories; propose candidates with stars + one-liner; add only what the user approves. `discover` scans a category broadly; `deep` drills into one named tool |
-| `/radar deep <id or name/url>` | Read the tool's README, docs, recent releases; report how it compares to this project. **Tracked** (id matches the registry): also update its `features`/`notes`. **Untracked** (a name or URL): the research is identical — it runs off the web, not the registry — so do it anyway, then close with a reasoned add/skip recommendation and a category. Add only via `radar.ts add`, only if the user says yes |
+| `/radar deep <id or name/url>` | Read the tool's README, docs, recent releases; report how it compares to this project. **Tracked** (id matches the registry): also update its `features`/`notes` and refresh `stars` (they're recorded at add time and go stale otherwise). **Untracked** (a name or URL): the research is identical — it runs off the web, not the registry — so do it anyway, then close with a reasoned add/skip recommendation and a category. Add only via `radar.ts add`, only if the user says yes |
 | `/radar list` / `show <id>` / `history <id>` | Run the CLI command, relay output |
-| `/radar suggest` | `radar.ts suggest` (needs comparison data + `selfId`) |
 
 ## Notes
 
+- `.github/workflows/radar.yml` exists only because `init --workflow` was
+  run — it belongs to the optional weekly CI check, not to the skill
+  install channel; deleting it removes the check cleanly, local `/radar`
+  use is unaffected. It runs the `mralabs/radar` composite action pinned
+  to a commit SHA. A `.github/radar/` dir is the pre-0.5 vendored CLI —
+  but check radar.yml first: the pre-0.5 workflow RUNS that dir. If
+  radar.yml references `.github/radar/`, delete both together and re-run
+  `init --workflow`; only then is the dir safe to remove.
 - GitHub API is rate-limited (60/h anonymous). If checks error, set
   `GITHUB_TOKEN` env — `radar.ts rate-limit` shows current quota.
 - Registry `notes`/`features` are curated knowledge, not cache — improve

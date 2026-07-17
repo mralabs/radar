@@ -158,6 +158,51 @@ export async function getGitHubRateLimit(): Promise<{
 }
 
 /**
+ * Latest release tag (vX.Y.Z) and its commit SHA — used by `init
+ * --workflow` to pin the consumer workflow to an immutable ref.
+ * Highest semver wins; the tags API's own order is not release order.
+ */
+export async function getLatestTagSha(
+  repo: string
+): Promise<{ tag: string; sha: string } | null> {
+  const tags = await fetchJson<Array<{ name: string; commit: { sha: string } }>>(
+    `${GITHUB_API}/repos/${repo}/tags?per_page=100`,
+    getAuthOptions()
+  )
+  const releases = (tags ?? []).filter(t => /^v?\d+\.\d+\.\d+$/.test(t.name))
+  if (releases.length === 0) return null
+
+  const ver = (name: string): number[] => name.replace(/^v/, '').split('.').map(Number)
+  releases.sort((a, b) => {
+    const [x, y] = [ver(a.name), ver(b.name)]
+    return y[0] - x[0] || y[1] - x[1] || y[2] - x[2]
+  })
+  return { tag: releases[0].name, sha: releases[0].commit.sha }
+}
+
+/**
+ * Fetch a repo file's text via the contents API — same auth/rate-limit
+ * path as every other GitHub call. Returns null when the file doesn't
+ * exist or is too large for the API to inline (>1MB, encoding "none").
+ */
+export async function getGitHubFileText(
+  repo: string,
+  path: string,
+  ref?: string
+): Promise<string | null> {
+  try {
+    const data = await fetchJson<{ content?: string; encoding?: string }>(
+      `${GITHUB_API}/repos/${repo}/contents/${path}${ref ? `?ref=${ref}` : ''}`,
+      getAuthOptions()
+    )
+    if (!data?.content || data.encoding !== 'base64') return null
+    return Buffer.from(data.content, 'base64').toString('utf8')
+  } catch {
+    return null
+  }
+}
+
+/**
  * Extract "owner/repo" from any GitHub URL form
  * (git+https://github.com/o/r.git, git://, https://, ssh)
  */

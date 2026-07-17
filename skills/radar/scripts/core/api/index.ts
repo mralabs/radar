@@ -15,6 +15,8 @@ export {
   getGitHubReleasesSince,
   getGitHubCommits,
   getGitHubCommitsSince,
+  getGitHubFileText,
+  getLatestTagSha,
   extractGitHubRepo,
   getGitHubRateLimit,
   setGitHubToken,
@@ -22,4 +24,4 @@ export {
 } from './github.ts'
 export { getPyPIVersion, getPyPIRepoUrl } from './pypi.ts'
 export { getNPMVersion, getNPMRepoUrl } from './npm.ts'
-export { getNuGetVersion } from './nuget.ts'
+export { getNuGetVersion, getNuGetRepoUrl } from './nuget.ts'

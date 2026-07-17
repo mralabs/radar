@@ -47,12 +47,7 @@ export type {
   UpdateInfo,
   UpToDateInfo,
   ErrorInfo,
-  CheckResult,
-  DiscoveryResult,
-  FeatureValue,
-  FeatureDefinition,
-  ComparisonData,
-  Suggestion
+  CheckResult
 } from './types.ts'
 
 // API Clients
@@ -62,6 +57,8 @@ export {
   getGitHubReleases,
   getGitHubCommits,
   getGitHubRateLimit,
+  getGitHubFileText,
+  getLatestTagSha,
   setGitHubToken,
   getGitHubToken,
   getPyPIVersion,
@@ -99,8 +96,7 @@ export type {
 export {
   checkUpdates,
   listTools,
-  getChangelog,
-  suggestFeatures
+  getChangelog
 } from './reports.ts'
 export type {
   CheckUpdatesCallbacks,
@@ -122,23 +118,3 @@ export {
   getBreakingChanges,
   getMajorChanges
 } from './history.ts'
-
-// Discovery
-export {
-  discoverFromGitHub,
-  discoverFromAwesomeLists,
-  discoverTools
-} from './discovery.ts'
-export type {
-  DiscoveryCallbacks,
-  DiscoveryOptions
-} from './discovery.ts'
-
-// Features
-export {
-  extractToolFeatures,
-  compareFeatures
-} from './features.ts'
-export type {
-  ExtractedFeatures
-} from './features.ts'

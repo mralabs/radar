@@ -48,7 +48,7 @@ cat > .radar/registry.json <<'EOF'
 EOF
 
 echo '{ "lastChecked": "2026-07-16T00:00:00.000Z", "tools": {} }' > .radar/versions.json
-echo '{ "selfId": "notemesh", "taskSink": "a spec file under docs/specs/" }' > .radar/config.json
+echo '{ "taskSink": "a spec file under docs/specs/" }' > .radar/config.json
 
 git init -q
 git add -A

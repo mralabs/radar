@@ -1,4 +1,5 @@
 .rigo/
 node_modules/
 .mcp.json
+.claude/
 **/evals/results/

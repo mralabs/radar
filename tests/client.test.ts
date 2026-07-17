@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { fetchJson } from '../skills/radar/scripts/core/api/client.ts'
+import { getNuGetRepoUrl } from '../skills/radar/scripts/core/api/nuget.ts'
 
 const realFetch = globalThis.fetch
 
@@ -54,5 +55,48 @@ describe('fetchJson', () => {
     })
 
     expect(seen['x-custom-header']).toBe('test')
+  })
+})
+
+describe('getNuGetRepoUrl', () => {
+  afterEach(() => {
+    globalThis.fetch = realFetch
+  })
+
+  it('resolves projectUrl from an inlined registration page', async () => {
+    stubFetch(url => {
+      if (url.includes('/registration5-semver1/mypkg/index.json')) {
+        return Response.json({
+          items: [{ items: [{ catalogEntry: { projectUrl: 'https://github.com/o/r' } }] }]
+        })
+      }
+      return new Response('not found', { status: 404 })
+    })
+
+    expect(await getNuGetRepoUrl('MyPkg')).toBe('https://github.com/o/r')
+  })
+
+  it('follows a page reference when leaves are not inlined', async () => {
+    stubFetch(url => {
+      if (url.includes('/index.json')) {
+        return Response.json({ items: [{ '@id': 'https://example.test/page2.json' }] })
+      }
+      if (url.includes('page2.json')) {
+        return Response.json({
+          items: [
+            { catalogEntry: { projectUrl: 'https://github.com/o/old' } },
+            { catalogEntry: { projectUrl: 'https://github.com/o/r' } }
+          ]
+        })
+      }
+      return new Response('not found', { status: 404 })
+    })
+
+    expect(await getNuGetRepoUrl('mypkg')).toBe('https://github.com/o/r')
+  })
+
+  it('returns null when the package is unknown', async () => {
+    stubFetch(() => new Response('not found', { status: 404 }))
+    expect(await getNuGetRepoUrl('ghost')).toBeNull()
   })
 })

@@ -1,8 +1,10 @@
 name: radar-weekly
 
-# Runs the radar CLI vendored into this repo at .github/radar/ by
-# `radar init --workflow`. No remote code is fetched at run time — update
-# the vendored copy by re-running init after a skill update.
+# Runs the radar composite action pinned to the commit SHA below —
+# resolved from the latest radar release when `radar init --workflow`
+# was run. Nothing floating ever executes in your CI. To update: bump
+# the SHA (Dependabot's `github-actions` ecosystem will PR bumps), or
+# delete this file and re-run `radar init --workflow`.
 #
 # Notification model: one rolling "Radar digest" issue. New update sets
 # refresh its body and land as a comment (comments notify, body edits
@@ -22,77 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      # ubuntu-latest ships Node ≥ 22.18, which runs .ts natively — no
-      # runtime setup step, one less action to pin and audit.
-      - name: Run check
-        id: check
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          node .github/radar/radar.ts check --json > /tmp/radar.json
-          echo "updates=$(jq '.updates | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Write run summary
-        run: |
-          {
-            echo "## 📡 Radar weekly check"
-            echo ""
-            if [ "$(jq '.updates | length' /tmp/radar.json)" != "0" ]; then
-              echo "### Updates"
-              jq -r '.updates[] | "- **\(.tool.name)**: \(.lastVersion) → \(.currentVersion)"' /tmp/radar.json
-              echo ""
-            fi
-            if [ "$(jq '.baselined | length' /tmp/radar.json)" != "0" ]; then
-              echo "### Newly tracked"
-              jq -r '.baselined[] | "- \(.tool.name): tracking from \(.version)"' /tmp/radar.json
-              echo ""
-            fi
-            echo "Up to date: $(jq '.upToDate | length' /tmp/radar.json) · Errors: $(jq '.errors | length' /tmp/radar.json)"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Commit updated state
-        run: |
-          git config user.name "radar-bot"
-          git config user.email "radar-bot@users.noreply.github.com"
-          git add .radar/versions.json
-          git diff --cached --quiet || git commit -m "chore(radar): weekly check" && git push
-
-      - name: Update digest issue
-        if: steps.check.outputs.updates != '0'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Stable fingerprint of the update set — independent of output format
-          FP=$(jq -r '.updates[] | "\(.tool.id)@\(.currentVersion)"' /tmp/radar.json | sort | shasum -a 256 | cut -c1-12)
-          UPDATE_LINES=$(jq -r '.updates[] | "- **\(.tool.name)**: \(.lastVersion) → \(.currentVersion)"' /tmp/radar.json)
-
-          gh label create radar --color 1D76DB --description "radar ecosystem updates" --force
-
-          # One rolling digest issue: reuse the open one, reopen a closed
-          # one, create only if none exists
-          NUM=$(gh issue list --label radar --state open --limit 1 --json number --jq '.[0].number // empty')
-          if [ -z "$NUM" ]; then
-            NUM=$(gh issue list --label radar --state closed --limit 1 --json number --jq '.[0].number // empty')
-            if [ -n "$NUM" ]; then gh issue reopen "$NUM"; fi
-          fi
-          if [ -z "$NUM" ]; then
-            URL=$(gh issue create --title "📡 Radar digest" --label radar \
-              --body "Rolling digest of ecosystem updates. Run \`/radar\` locally for analysis.")
-            NUM="${URL##*/}"
-          fi
-
-          # Same update set already reported? (fingerprint lives in comments)
-          if gh issue view "$NUM" --json body,comments \
-              --jq '[.body, .comments[].body] | join("\n")' | grep -q "radar-fingerprint: $FP"; then
-            echo "Fingerprint $FP already reported on #$NUM — skipping."
-            exit 0
-          fi
-
-          # Body = current state (edits don't notify); comment = what's new
-          # (comments DO notify subscribers)
-          gh issue edit "$NUM" --body "$(printf 'Pending updates as of %s:\n\n%s\n\nRun `/radar` locally for analysis and recommendations.\n\n<!-- radar-fingerprint: %s -->' "$(date -u +%F)" "$UPDATE_LINES" "$FP")"
-          gh issue comment "$NUM" --body "$(printf 'New update set (%s):\n\n%s\n\n<!-- radar-fingerprint: %s -->' "$(date -u +%F)" "$UPDATE_LINES" "$FP")"
+      - uses: mralabs/radar@__RADAR_SHA__ # __RADAR_TAG__
 
       # ── Optional: full AI analysis written into the digest ─────────────
       # Requires ANTHROPIC_API_KEY secret. Uncomment to enable (and pin the

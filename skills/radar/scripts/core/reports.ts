@@ -4,9 +4,7 @@
  * Check updates, list tools, get changelog, suggest features.
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
-import { getGitHubVersion, getGitHubReleasesSince, getGitHubCommits, getGitHubCommitsSince, extractGitHubRepo, getNPMRepoUrl, getPyPIRepoUrl } from './api/index.ts'
+import { getGitHubVersion, getGitHubReleasesSince, getGitHubCommits, getGitHubCommitsSince, getGitHubFileText, extractGitHubRepo, getNPMRepoUrl, getPyPIRepoUrl, getNuGetRepoUrl } from './api/index.ts'
 import { getPyPIVersion } from './api/index.ts'
 import { getNPMVersion } from './api/index.ts'
 import { getNuGetVersion } from './api/index.ts'
@@ -22,8 +20,6 @@ import type {
   UpToDateInfo,
   BaselineInfo,
   ErrorInfo,
-  ComparisonData,
-  Suggestion,
   GitHubRelease,
   GitHubCommit
 } from './types.ts'
@@ -323,9 +319,13 @@ export interface ChangelogCommit {
 
 export interface ChangelogResult {
   tool: Tool
-  type: 'releases' | 'commits'
+  type: 'releases' | 'changelog-file' | 'commits'
   releases?: ChangelogRelease[]
   commits?: ChangelogCommit[]
+  /** Raw markdown slice of the repo's changelog file (type: changelog-file) */
+  markdown?: string
+  /** Which file the markdown came from, e.g. CHANGELOG.md */
+  path?: string
   /** Set when the result may be incomplete — surface this, never hide it */
   warning?: string
   error?: string
@@ -354,7 +354,74 @@ async function resolveChangelogRepo(
   if (tool.type === 'pypi') {
     return { repo: extractGitHubRepo(await getPyPIRepoUrl(pkg)), bridgedPackage: pkg }
   }
+  if (tool.type === 'nuget') {
+    return { repo: extractGitHubRepo(await getNuGetRepoUrl(pkg)), bridgedPackage: pkg }
+  }
   return { repo: null, bridgedPackage: null }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Changelog file parsing
+// ─────────────────────────────────────────────────────────────
+
+/** A markdown heading that names a release version, e.g. "## [1.2.3] - 2026-01-01" */
+const VERSION_HEADING = /^#{1,4}\s.*?\bv?(\d+(?:\.\d+){1,3}(?:-[\w.]+)?)\b/
+
+export interface ChangelogFileSlice {
+  markdown: string
+  /** version sections included in the slice */
+  sections: number
+  anchorFound: boolean
+  /** true = older sections exist beyond the cap (no-anchor case only) */
+  truncated: boolean
+}
+
+/**
+ * Slice a changelog file down to the sections newer than sinceVersion.
+ * Returns null when the file has no recognizable version headings.
+ * Mirrors getGitHubReleasesSince semantics: an unfound anchor caps the
+ * slice at maxSections and the caller must surface incompleteness.
+ */
+export function sliceChangelogSince(
+  content: string,
+  sinceVersion: string | null,
+  maxSections = 10
+): ChangelogFileSlice | null {
+  const lines = content.split(/\r?\n/)
+  const headings: Array<{ line: number; version: string }> = []
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(VERSION_HEADING)
+    if (match) headings.push({ line: i, version: match[1] })
+  }
+  if (headings.length === 0) return null
+
+  // One section per heading. Changelogs are usually newest-first, but
+  // appended (oldest-first) files exist — taking "before the anchor" in
+  // such a file would silently return the OLDEST sections, so detect the
+  // order via first/last version and normalize to newest-first.
+  const sections = headings.map((h, i) => ({
+    version: h.version,
+    text: lines.slice(h.line, headings[i + 1]?.line ?? lines.length).join('\n')
+  }))
+  const num = (v: string): number[] => v.split('.').map(n => parseInt(n, 10))
+  const cmpVer = (a: string, b: string): number => {
+    const [pa, pb] = [num(a), num(b)]
+    return pa[0] - pb[0] || (pa[1] ?? 0) - (pb[1] ?? 0) || (pa[2] ?? 0) - (pb[2] ?? 0)
+  }
+  if (sections.length > 1 && cmpVer(sections[0].version, sections[sections.length - 1].version) < 0) {
+    sections.reverse()
+  }
+
+  const target = sinceVersion?.replace(/^v/, '') ?? null
+  const anchor = target === null ? -1 : sections.findIndex(s => s.version === target)
+  const end = anchor >= 0 ? anchor : Math.min(maxSections, sections.length)
+
+  return {
+    markdown: sections.slice(0, end).map(s => s.text).join('\n').trim(),
+    sections: end,
+    anchorFound: target === null || anchor >= 0,
+    truncated: target === null && sections.length > maxSections
+  }
 }
 
 /**
@@ -422,6 +489,40 @@ export async function getChangelog(
       return { tool, type: 'releases', releases: changelogReleases, warning }
     }
 
+    // No releases → try the repo's changelog file before bare commits:
+    // many projects (npm libs especially) tag without GitHub releases but
+    // keep a CHANGELOG.md, which is far better analysis material.
+    for (const path of ['CHANGELOG.md', 'CHANGES.md']) {
+      const text = await getGitHubFileText(source, path)
+      if (!text) continue
+      const slice = sliceChangelogSince(text, sinceVersion)
+      if (!slice || slice.sections === 0) continue
+
+      let fileWarning: string | undefined
+      if (!slice.anchorFound) {
+        fileWarning =
+          `Anchor version ${sinceVersion} not found in ${path} — ` +
+          `showing the ${slice.sections} newest sections; the range may be incomplete.`
+      } else if (slice.truncated) {
+        fileWarning = `Showing only the ${slice.sections} newest sections of ${path} — older entries omitted.`
+      }
+
+      // A bridged package reads the REPO's changelog file — in a monorepo
+      // that file (and its version anchors) may belong to other packages
+      const bridgeWarning = bridgedPackage
+        ? `${path} read from ${source} via the ${bridgedPackage} package bridge — ` +
+          'if that repo is a monorepo, sections may cover other packages.'
+        : undefined
+
+      return {
+        tool,
+        type: 'changelog-file',
+        path,
+        markdown: slice.markdown,
+        warning: [fileWarning, bridgeWarning].filter(Boolean).join(' ') || undefined
+      }
+    }
+
     // Fall back to commits. With an anchor, the compare API covers the
     // exact range; without one (or if the ref is gone) a fixed window is
     // all we have — and that is said out loud, never implied complete.
@@ -470,57 +571,4 @@ export async function getChangelog(
       error: err instanceof Error ? err.message : 'Unknown error'
     }
   }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Suggest Features
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Suggest features based on comparison data
- */
-export function suggestFeatures(comparisonsDir: string, selfId: string): Suggestion[] {
-  if (!existsSync(comparisonsDir)) {
-    return []
-  }
-
-  const files = readdirSync(comparisonsDir).filter(f => f.endsWith('.json'))
-  const suggestions: Suggestion[] = []
-
-  for (const file of files) {
-    try {
-      const content = readFileSync(join(comparisonsDir, file), 'utf8')
-      const comparison = JSON.parse(content) as ComparisonData
-      const ourTool = comparison.tools?.[selfId]
-
-      if (!ourTool) continue
-
-      for (const [featureId, featureValue] of Object.entries(ourTool)) {
-        if (featureValue.value === false || featureValue.value === '-') {
-          // Find who has this feature
-          const hasFeature = Object.entries(comparison.tools ?? {})
-            .filter(([id, t]) => {
-              const toolFeatures = t as Record<string, { value: unknown }>
-              return id !== selfId && toolFeatures[featureId]?.value === true
-            })
-            .map(([id]) => id)
-
-          if (hasFeature.length > 0) {
-            const featureDef = comparison.features?.find(f => f.id === featureId)
-            suggestions.push({
-              feature: featureId,
-              name: featureDef?.name ?? featureId,
-              description: featureDef?.description ?? '',
-              availableIn: hasFeature,
-              category: comparison.category
-            })
-          }
-        }
-      }
-    } catch {
-      // Skip invalid files
-    }
-  }
-
-  return suggestions
 }

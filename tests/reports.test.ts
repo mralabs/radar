@@ -2,10 +2,8 @@
  * Reports Tests
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
-import { existsSync, mkdirSync, rmdirSync, writeFileSync, unlinkSync } from 'node:fs'
-import { join } from 'node:path'
-import { checkUpdates, listTools, suggestFeatures } from '../skills/radar/scripts/core/reports.ts'
+import { describe, it, expect, afterEach } from 'bun:test'
+import { checkUpdates, listTools, getChangelog, sliceChangelogSince } from '../skills/radar/scripts/core/reports.ts'
 import type { Registry, Versions } from '../skills/radar/scripts/core/types.ts'
 
 describe('listTools', () => {
@@ -91,93 +89,215 @@ describe('listTools', () => {
   })
 })
 
-describe('suggestFeatures', () => {
-  const TEST_DIR = '/tmp/comparisons-test'
+describe('sliceChangelogSince', () => {
+  const CHANGELOG = [
+    '# Changelog',
+    '',
+    'All notable changes.',
+    '',
+    '## [2.1.0] - 2026-06-01',
+    '- feat: two-one',
+    '',
+    '## [2.0.0] - 2026-05-01',
+    '- breaking: two-oh',
+    '',
+    '## [1.9.0] - 2026-04-01',
+    '- fix: one-nine',
+    ''
+  ].join('\n')
 
-  beforeEach(() => {
-    if (!existsSync(TEST_DIR)) {
-      mkdirSync(TEST_DIR, { recursive: true })
-    }
+  it('slices everything newer than the anchor version', () => {
+    const slice = sliceChangelogSince(CHANGELOG, '2.0.0')
+
+    expect(slice?.anchorFound).toBe(true)
+    expect(slice?.sections).toBe(1)
+    expect(slice?.markdown).toContain('two-one')
+    expect(slice?.markdown).not.toContain('two-oh')
   })
+
+  it('matches v-prefixed anchors against unprefixed headings', () => {
+    const slice = sliceChangelogSince(CHANGELOG, 'v1.9.0')
+
+    expect(slice?.anchorFound).toBe(true)
+    expect(slice?.sections).toBe(2)
+  })
+
+  it('drops the preamble above the first version heading', () => {
+    const slice = sliceChangelogSince(CHANGELOG, '2.0.0')
+    expect(slice?.markdown).not.toContain('All notable changes')
+  })
+
+  it('reports anchorFound=false and caps sections when the anchor is missing', () => {
+    const slice = sliceChangelogSince(CHANGELOG, '0.5.0', 2)
+
+    expect(slice?.anchorFound).toBe(false)
+    expect(slice?.sections).toBe(2)
+    expect(slice?.markdown).not.toContain('one-nine')
+  })
+
+  it('anchor at the top yields zero new sections', () => {
+    const slice = sliceChangelogSince(CHANGELOG, '2.1.0')
+    expect(slice?.sections).toBe(0)
+    expect(slice?.markdown).toBe('')
+  })
+
+  it('returns null when no version headings exist', () => {
+    expect(sliceChangelogSince('# Notes\n\njust prose\n', '1.0.0')).toBeNull()
+  })
+
+  it('ignores non-version headings like "### Changed"', () => {
+    const kac = '## [1.1.0] - 2026-01-01\n### Changed\n- stuff\n## [1.0.0] - 2025-12-01\n- init\n'
+    const slice = sliceChangelogSince(kac, '1.0.0')
+
+    expect(slice?.sections).toBe(1)
+    expect(slice?.markdown).toContain('### Changed')
+  })
+
+  it('handles oldest-first (appended) changelogs', () => {
+    const asc = '## 1.0.0\n- old\n## 2.0.0\n- mid\n## 3.0.0\n- new\n'
+    const slice = sliceChangelogSince(asc, '2.0.0')
+
+    expect(slice?.anchorFound).toBe(true)
+    expect(slice?.sections).toBe(1)
+    expect(slice?.markdown).toContain('- new')
+    expect(slice?.markdown).not.toContain('- mid')
+    expect(slice?.markdown).not.toContain('- old')
+  })
+
+  it('oldest-first without anchor returns the newest sections, flagged truncated', () => {
+    const asc = '## 1.0.0\n- old\n## 2.0.0\n- mid\n## 3.0.0\n- new\n'
+    const slice = sliceChangelogSince(asc, null, 2)
+
+    expect(slice?.markdown).toContain('- new')
+    expect(slice?.markdown).toContain('- mid')
+    expect(slice?.markdown).not.toContain('- old')
+    expect(slice?.truncated).toBe(true)
+  })
+
+  it('handles plain "## 1.2.3 (date)" heading style', () => {
+    const log = '## 2.0.0 (2026-02-02)\n- new\n## 1.0.0 (2026-01-01)\n- old\n'
+    const slice = sliceChangelogSince(log, '1.0.0')
+
+    expect(slice?.anchorFound).toBe(true)
+    expect(slice?.markdown).toContain('- new')
+    expect(slice?.markdown).not.toContain('- old')
+  })
+})
+
+describe('getChangelog — changelog file fallback', () => {
+  const realFetch = globalThis.fetch
 
   afterEach(() => {
-    const files = ['test.json']
-    for (const file of files) {
-      const path = join(TEST_DIR, file)
-      if (existsSync(path)) unlinkSync(path)
-    }
-    if (existsSync(TEST_DIR)) rmdirSync(TEST_DIR)
+    globalThis.fetch = realFetch
   })
 
-  it('should return empty array if directory does not exist', () => {
-    const suggestions = suggestFeatures('/non/existent/path', 'my-project')
-    expect(suggestions).toEqual([])
-  })
+  const registry: Registry = {
+    version: '1.0.0',
+    categories: { deps: { name: 'Deps' } },
+    tools: [
+      { id: 'lib', name: 'Lib', category: 'deps', type: 'github', source: 'o/r', url: null, status: 'active' }
+    ]
+  }
 
-  it('should find missing features', () => {
-    const comparison = {
-      category: 'test-category',
-      features: [
-        { id: 'feature-1', name: 'Feature 1', description: 'A feature' },
-        { id: 'feature-2', name: 'Feature 2', description: 'Another feature' }
-      ],
-      tools: {
-        'my-project': {
-          'feature-1': { value: true },
-          'feature-2': { value: false }
-        },
-        'other-tool': {
-          'feature-1': { value: true },
-          'feature-2': { value: true }
-        }
+  const versions: Versions = {
+    lastChecked: null,
+    tools: { lib: { currentVersion: '2.0.0', lastAnalyzedVersion: '1.0.0' } }
+  }
+
+  it('serves CHANGELOG.md when the repo has no releases', async () => {
+    const changelog = '## 2.0.0\n- new stuff\n## 1.0.0\n- old stuff\n'
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes('/releases')) return Response.json([])
+      if (url.includes('/contents/CHANGELOG.md')) {
+        return Response.json({
+          content: Buffer.from(changelog).toString('base64'),
+          encoding: 'base64'
+        })
       }
-    }
+      return new Response('not found', { status: 404 })
+    }) as typeof fetch
 
-    writeFileSync(join(TEST_DIR, 'test.json'), JSON.stringify(comparison))
+    const result = await getChangelog(registry, 'lib', versions)
 
-    const suggestions = suggestFeatures(TEST_DIR, 'my-project')
-
-    expect(suggestions).toHaveLength(1)
-    expect(suggestions[0].feature).toBe('feature-2')
-    expect(suggestions[0].name).toBe('Feature 2')
-    expect(suggestions[0].availableIn).toContain('other-tool')
-    expect(suggestions[0].category).toBe('test-category')
+    expect(result?.type).toBe('changelog-file')
+    expect(result?.path).toBe('CHANGELOG.md')
+    expect(result?.markdown).toContain('new stuff')
+    expect(result?.markdown).not.toContain('old stuff')
+    expect(result?.warning).toBeUndefined()
   })
 
-  it('should not suggest features we already have', () => {
-    const comparison = {
-      tools: {
-        'my-project': {
-          'feature-1': { value: true }
-        },
-        'other-tool': {
-          'feature-1': { value: true }
-        }
+  it('warns when the anchor is missing from the changelog file', async () => {
+    const changelog = '## 2.0.0\n- new\n## 1.5.0\n- mid\n'
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes('/releases')) return Response.json([])
+      if (url.includes('/contents/CHANGELOG.md')) {
+        return Response.json({
+          content: Buffer.from(changelog).toString('base64'),
+          encoding: 'base64'
+        })
       }
-    }
+      return new Response('not found', { status: 404 })
+    }) as typeof fetch
 
-    writeFileSync(join(TEST_DIR, 'test.json'), JSON.stringify(comparison))
+    const result = await getChangelog(registry, 'lib', versions)
 
-    const suggestions = suggestFeatures(TEST_DIR, 'my-project')
-    expect(suggestions).toHaveLength(0)
+    expect(result?.type).toBe('changelog-file')
+    expect(result?.warning).toContain('may be incomplete')
   })
 
-  it('should handle - value as missing', () => {
-    const comparison = {
-      tools: {
-        'my-project': {
-          'feature-1': { value: '-' }
-        },
-        'other-tool': {
-          'feature-1': { value: true }
-        }
-      }
+  it('flags the monorepo risk when the changelog comes via a package bridge', async () => {
+    const npmRegistry: Registry = {
+      version: '1.0.0',
+      categories: { deps: { name: 'Deps' } },
+      tools: [
+        { id: 'pkg', name: 'Pkg', category: 'deps', type: 'npm', source: 'left-pad', url: null, status: 'active' }
+      ]
     }
+    const npmVersions: Versions = {
+      lastChecked: null,
+      tools: { pkg: { currentVersion: '2.0.0', lastAnalyzedVersion: '1.0.0' } }
+    }
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes('registry.npmjs.org/left-pad')) {
+        return Response.json({ repository: { url: 'https://github.com/o/mono' } })
+      }
+      if (url.includes('/releases')) return Response.json([])
+      if (url.includes('/contents/CHANGELOG.md')) {
+        return Response.json({
+          content: Buffer.from('## 2.0.0\n- new\n## 1.0.0\n- old\n').toString('base64'),
+          encoding: 'base64'
+        })
+      }
+      return new Response('not found', { status: 404 })
+    }) as typeof fetch
 
-    writeFileSync(join(TEST_DIR, 'test.json'), JSON.stringify(comparison))
+    const result = await getChangelog(npmRegistry, 'pkg', npmVersions)
 
-    const suggestions = suggestFeatures(TEST_DIR, 'my-project')
-    expect(suggestions).toHaveLength(1)
+    expect(result?.type).toBe('changelog-file')
+    expect(result?.warning).toContain('monorepo')
+  })
+
+  it('falls through to commits when no changelog file exists', async () => {
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes('/releases')) return Response.json([])
+      if (url.includes('/contents/')) return new Response('not found', { status: 404 })
+      if (url.includes('/compare/')) {
+        return Response.json({
+          total_commits: 1,
+          commits: [{ sha: 'abc1234', commit: { author: { date: '2026-01-01' }, message: 'fix' } }]
+        })
+      }
+      return new Response('not found', { status: 404 })
+    }) as typeof fetch
+
+    const result = await getChangelog(registry, 'lib', versions)
+
+    expect(result?.type).toBe('commits')
+    expect(result?.commits).toHaveLength(1)
   })
 })
 
