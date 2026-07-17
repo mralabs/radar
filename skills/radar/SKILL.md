@@ -30,9 +30,15 @@ bun <skill-dir>/scripts/radar.ts <command>   # requires bun
    - `competitors` — same-space products
    - `deps` — libraries whose breaking changes hurt
    - `inspiration` — idea sources
-3. Add approved entries via `radar.ts add <type> <source> --category X`
-   (types: github, npm, pypi). Then enrich each entry's `features` and
-   `notes` fields in `.radar/registry.json` — these drive analysis quality.
+
+   Then **stop and end your turn with that proposal.** Init is a two-turn
+   flow: propose, wait, add. A tool the user has not named does not enter
+   the registry — not via `radar.ts add`, not via a hand-edit, not via a
+   script. Listing what you already added is not proposing.
+3. Once the user approves, add the entries via
+   `radar.ts add <type> <source> --category X` (types: github, npm, pypi).
+   Then enrich each entry's `features` and `notes` fields in
+   `.radar/registry.json` — these drive analysis quality.
 4. Set `selfId` in `.radar/config.json` to the project's own id.
 
 ## Main flow: `/radar` (no args)
