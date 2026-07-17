@@ -58,6 +58,8 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
 ## Main flow: `/radar` (no args)
 
 1. `radar.ts check` — fetches latest versions, diffs against known state.
+   No `.radar/` yet? The CLI says so and exits — don't improvise: run the
+   `/radar init` flow above (propose, wait, write), then resume here.
    A tool's FIRST check records a baseline (`NEW — tracking from X`):
    tracking starts at the version first seen, past releases are not
    analyzed. Updates fire from the next release onward.
