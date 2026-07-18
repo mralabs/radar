@@ -41,7 +41,7 @@ gh skill install mralabs/radar radar --agent github-copilot
 
 Default scope is the current repo; add `--scope user` to install globally.
 
-Requires `gh` ≥ 2.90 (the release that introduced `gh skill`). The bundled CLI runs on [bun](https://bun.sh)
+Requires `gh` ≥ 2.90 (the release that introduced `gh skill`) — newer recommended, gh ships frequent security fixes. The bundled CLI runs on [bun](https://bun.sh)
 or plain Node ≥ 22.18 — whichever is already installed.
 No `gh`? Cloning this repo's `skills/radar/` into your agent's skills
 directory works the same.
