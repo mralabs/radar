@@ -1,5 +1,8 @@
 # radar
 
+[![CI](https://github.com/mralabs/radar/actions/workflows/ci.yml/badge.svg)](https://github.com/mralabs/radar/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Agent skill that tracks competitors, upstream tools and key dependencies of
 your repo — checks versions, reads changelogs, and tells you what matters
 for *your* project.
