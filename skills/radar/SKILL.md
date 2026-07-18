@@ -56,7 +56,10 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    nuget). If they said yes to the weekly check, run
    `radar.ts init --workflow` — idempotent: existing `.radar/` data is
    untouched, it only installs the workflow. Then enrich each entry's `features` and `notes` fields in
-   `.radar/registry.json` — these drive analysis quality.
+   `.radar/registry.json` — these drive analysis quality. Close by
+   relaying that knowledge, not just a version table: one or two lines
+   per tool — what it is and what to watch for — so the user doesn't
+   need a `deep` per tool just to know what they're now tracking.
 4. Write `.radar/config.json`: `taskSink` = free text naming the sink the
    user picked (`"rigo board"`, `"GitHub issues"`, `"a spec file under
    docs/specs/"`). If they want findings reported and nothing more, write
