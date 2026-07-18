@@ -1,8 +1,8 @@
 {
-  "lastChecked": "2026-07-18T15:24:00.086Z",
+  "lastChecked": "2026-07-18T15:45:04.027Z",
   "tools": {
     "dependabot-dependabot-core": {
-      "lastChecked": "2026-07-18T15:23:59.601Z",
+      "lastChecked": "2026-07-18T15:45:03.385Z",
       "currentVersion": "0.387.0",
       "latestReleaseDate": "2026-07-16T20:27:46Z",
       "history": [
@@ -16,7 +16,7 @@
       "lastAnalyzedVersion": "0.387.0"
     },
     "renovatebot-renovate": {
-      "lastChecked": "2026-07-18T15:23:59.646Z",
+      "lastChecked": "2026-07-18T15:45:03.390Z",
       "currentVersion": "43.270.0",
       "latestReleaseDate": "2026-07-18T14:48:05Z",
       "history": [
@@ -30,7 +30,7 @@
       "lastAnalyzedVersion": "43.270.0"
     },
     "claude-code": {
-      "lastChecked": "2026-07-18T15:23:59.595Z",
+      "lastChecked": "2026-07-18T15:45:03.411Z",
       "currentVersion": "2.1.214",
       "latestReleaseDate": "2026-07-18T01:20:30Z",
       "history": [
@@ -44,7 +44,7 @@
       "lastAnalyzedVersion": "2.1.214"
     },
     "microsoft-typescript": {
-      "lastChecked": "2026-07-18T15:23:59.597Z",
+      "lastChecked": "2026-07-18T15:45:03.463Z",
       "currentVersion": "6.0.3",
       "latestReleaseDate": "2026-04-16T23:43:08Z",
       "history": [
@@ -58,7 +58,7 @@
       "lastAnalyzedVersion": "6.0.3"
     },
     "oven-sh-bun": {
-      "lastChecked": "2026-07-18T15:23:59.626Z",
+      "lastChecked": "2026-07-18T15:45:03.477Z",
       "currentVersion": "bun-v1.3.14",
       "latestReleaseDate": "2026-05-13T03:48:28Z",
       "history": [
@@ -72,7 +72,7 @@
       "lastAnalyzedVersion": "bun-v1.3.14"
     },
     "github-cli": {
-      "lastChecked": "2026-07-18T15:23:59.628Z",
+      "lastChecked": "2026-07-18T15:45:03.437Z",
       "currentVersion": "2.96.0",
       "latestReleaseDate": "2026-07-02T21:31:04Z",
       "history": [
@@ -86,7 +86,7 @@
       "lastAnalyzedVersion": "2.96.0"
     },
     "lilydjwg-nvchecker": {
-      "lastChecked": "2026-07-18T15:23:59.832Z",
+      "lastChecked": "2026-07-18T15:45:03.689Z",
       "currentVersion": "2.21",
       "latestReleaseDate": null,
       "history": [
@@ -100,7 +100,7 @@
       "lastAnalyzedVersion": "2.21"
     },
     "agentskills-agentskills": {
-      "lastChecked": "2026-07-18T15:24:00.086Z",
+      "lastChecked": "2026-07-18T15:45:04.026Z",
       "currentVersion": "commit-38a2ff8",
       "latestReleaseDate": "2026-07-10T00:11:48Z",
       "history": [
