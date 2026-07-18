@@ -1,0 +1,35 @@
+name: radar-weekly
+
+# Runs the radar composite action pinned to the commit SHA below —
+# resolved from the latest radar release when `radar init --workflow`
+# was run. Nothing floating ever executes in your CI. To update: bump
+# the SHA (Dependabot's `github-actions` ecosystem will PR bumps), or
+# delete this file and re-run `radar init --workflow`.
+#
+# Notification model: one rolling "Radar digest" issue. New update sets
+# refresh its body and land as a comment (comments notify, body edits
+# don't). The run summary always shows in the Actions tab.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1" # Monday 07:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: mralabs/radar@ac7591da6d079b95a2db18992799a7d54185be97 # v0.5.3
+
+      # ── Optional: full AI analysis written into the digest ─────────────
+      # Requires ANTHROPIC_API_KEY secret. Uncomment to enable (and pin the
+      # action to a reviewed SHA, same policy as above).
+      # - uses: anthropics/claude-code-action@v1
+      #   with:
+      #     anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      #     prompt: "Run the radar skill analysis on the updates in .radar/ and comment your findings on the open issue titled 'Radar digest'."

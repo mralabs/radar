@@ -1,0 +1,203 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-07-18T15:22:41.748Z",
+  "categories": {
+    "official": {
+      "name": "Official / Upstream",
+      "description": "Primary tools this project builds on — check their changelogs first"
+    },
+    "competitors": {
+      "name": "Competitors",
+      "description": "Alternative products in the same space — watch for features worth adopting"
+    },
+    "deps": {
+      "name": "Key Dependencies",
+      "description": "Libraries whose breaking changes affect this project"
+    },
+    "inspiration": {
+      "name": "Inspiration",
+      "description": "Not direct competitors, but sources of ideas"
+    }
+  },
+  "tools": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "category": "official",
+      "type": "github",
+      "source": "anthropics/claude-code",
+      "url": "https://github.com/anthropics/claude-code",
+      "description": "Anthropic's official CLI and radar's primary host. Its skill/plugin/permission conventions define how radar is discovered, loaded, and allowed to run.",
+      "stars": 138175,
+      "status": "active",
+      "features": [
+        "Agent Skills (SKILL.md) execution + plugin marketplace with per-project enable",
+        "Slash commands, hooks (with `if:` glob conditions), subagents, MCP servers",
+        "Bash permission model that gates the bundled CLI — actively hardening (compound commands, glob rules, redirect forms)",
+        "Memory-file frontmatter (ISO `modified` timestamp; inline `#` no longer truncates values)",
+        "OpenTelemetry log attributes, background sessions, scheduled tasks, EndConversation tool"
+      ],
+      "notes": "The single highest-impact upstream, and it moves EVERY release (near-daily cadence). v2.1.214 alone touched three things in radar's blast radius: a plugin-loading regression fix (--settings flag, regression since 2.1.181), a hook `if:` glob semantics change (single-segment `dir/**` now matches only `<cwd>/dir`; use `**/dir/**` for any-depth — deny/ask rules keep any-depth), and a wave of Bash permission hardening (compound commands, redirect forms, >10k-char commands now prompt). The Bash tightening is why batched `radar.ts add` calls now get denied by the auto-mode classifier — run adds one command per call. radar ships no hooks today, so the `if:` change doesn't bite, but the plugin-manifest / skill-frontmatter / allowed-tools / slash-command surface is exactly what a CC release can break silently for all plugin-channel users — so the weekly check must actually READ claude-code changelogs, not skim. Ecosystem signal: the #1 open issue by far is 'Support AGENTS.md' (11,467 reactions) — the whole ecosystem is converging on AGENTS.md, which validates radar's cross-agent, AGENTS.md-based design (radar already uses CLAUDE.md -> @AGENTS.md and ships via the Agent Skills spec to 45+ hosts).",
+      "tags": [
+        "cli",
+        "official"
+      ]
+    },
+    {
+      "id": "github-cli",
+      "name": "GitHub CLI (gh)",
+      "category": "official",
+      "type": "github",
+      "source": "cli/cli",
+      "url": "https://github.com/cli/cli",
+      "description": "`gh skill install` is radar's primary distribution channel (spec-compliant, 45+ hosts). Requires gh >= 2.90. NOT a radar-runtime dependency — the CLI uses fetch + GITHUB_TOKEN, never shells out to gh.",
+      "stars": 45313,
+      "status": "active",
+      "features": [
+        "gh skill install/publish (>= 2.90) — radar's distribution mechanism, still a young/preview surface",
+        "gh release download now works unauthenticated for public repos (v2.96)",
+        "gh repo read-file / read-dir — read repo contents without cloning (v2.95, preview)",
+        "Frequent security releases (v2.93 attestation auth leak, v2.96 codespace jupyter RCE)"
+      ],
+      "notes": "Zero radar-CODE impact: radar's CLI reads GITHUB_TOKEN from env and fetches directly — it never invokes gh, so gh's security fixes are user hygiene, not radar's concern. The real surface is DISTRIBUTION, and `gh skill` is immature with live bugs: preview rejects paths install accepts (#17), root-level SKILL.md not discovered (radar dodges this — it ships skills/radar/SKILL.md, not a root file), no GHES support (15), rate-limiting makes discovery unusable (echoes radar's own 60/h anon warning), no uninstall command yet. radar already de-risks the important ones: the skills/radar/ layout avoids the root-discovery bug, and the documented 'just clone skills/radar/' fallback covers GHES + rate-limited users. The >= 2.90 pin is a FEATURE floor (where gh skill landed), not a security floor — gh has shipped CVE fixes above it (2.93, 2.96), so tell users to keep gh current for their own sake. Cadence ~biweekly. gh repo read-file (v2.95) is conceptually adjacent to radar's changelog fetching but NOT adoptable — radar's zero-runtime-dep invariant forbids a gh dependency.",
+      "tags": [
+        "cli",
+        "distribution"
+      ]
+    },
+    {
+      "id": "oven-sh-bun",
+      "name": "Bun",
+      "category": "official",
+      "type": "github",
+      "source": "oven-sh/bun",
+      "url": "https://github.com/oven-sh/bun",
+      "description": "All-in-one JS runtime/bundler/test-runner/pkg-manager. For radar it wears two hats: the dev toolchain (bun test, bunx tsc) and ONE of two supported CLI runtimes.",
+      "stars": 94823,
+      "status": "active",
+      "features": [
+        "bun test — radar's test runner; tests import from bun:test, so this is the real coupling",
+        "TS execution without a build step (bun/bunx)",
+        "Runtime: radar uses only globalThis.fetch + node: modules, never Bun.* APIs",
+        "Tags releases as `bun-vX.Y.Z` (non-standard prefix) — that's what radar's version state records"
+      ],
+      "notes": "Which hat matters is the whole point. DEV toolchain is the actual blast radius: radar's tests are written against bun:test, so a breaking change there (matchers, mock/spy, lifecycle) is the one realistic way bun breaks radar's CI. RUNTIME coupling is deliberately minimal and self-protecting: the invariant 'CLI must run on bare bun AND bare node >= 22.18' forces scripts/ to stick to standard fetch + node: modules with no Bun.* APIs, which caps runtime risk to near-zero — a bun runtime change can't reach code that never uses bun-specific surface. Cadence: fast 1.3.x patch stream (baseline bun-v1.3.14, 2026-05). One quirk to remember: bun tags as `bun-vX.Y.Z`, not plain semver `vX.Y.Z` — fine today (radar recorded it), but any version-diff logic assuming plain semver could mis-sort it. Top open issues (formatter/linter 1947, Vitest support 272, monorepo 239, native V8 addons 529) are all in bun's growth areas that radar's tiny surface doesn't touch.",
+      "tags": [
+        "runtime",
+        "toolchain"
+      ]
+    },
+    {
+      "id": "renovatebot-renovate",
+      "name": "Renovate",
+      "category": "competitors",
+      "type": "github",
+      "source": "renovatebot/renovate",
+      "url": "https://github.com/renovatebot/renovate",
+      "description": "Mend.io's cross-platform dependency automation — 90+ managers/datasources, self-hostable, the most configurable release-tracking tool. Occupies the 'act on it' half radar skips.",
+      "stars": 22039,
+      "status": "active",
+      "features": [
+        "90+ package managers / datasources across GitHub, GitLab, Bitbucket, Azure, Gitea",
+        "Opens dep-update PRs; grouping, scheduling, config presets, self-hosting",
+        "Dependency Dashboard — a single rolling issue summarizing all pending updates (radar's weekly 'Radar digest' issue is the same pattern, arrived at independently)",
+        "Minimum Release Age — hold an update until a release is N days old (cooldown analog to Dependabot's default-days)",
+        "Changelog retrieval embedded in PRs — but only GitHub/GitLab datasources supported"
+      ],
+      "notes": "Orthogonal like Dependabot: Renovate resolves versions and opens PRs across 90+ managers; radar reads changelogs and grounds impact in the repo, filing nothing unless asked. Two design validations from this dive: (1) Renovate's top-loved UX is the Dependency Dashboard — one rolling issue — which is exactly radar's weekly 'Radar digest' issue, so radar landed on the right shape. (2) Their long-running 'Major overhaul of changelog retrieval' issue (46 reactions, still open, GitHub/GitLab-only, with a live known-bugs list) shows changelog retrieval is HARD even at 22k stars — radar's releases->CHANGELOG->commits fallback with an explicit incomplete-range warning (resolveChangelogRepo) is the honest version of the same problem. Release cadence is extreme (semantic-release, multiple tags/day) — never treat a raw Renovate version bump as a signal; only minor/major line changes matter. Top open issues: regex-manager naming (78), roll-up updates into one PR (59), conda support (51), Minimum Release Age propagation (43).",
+      "tags": [
+        "dependency-updates",
+        "changelog"
+      ]
+    },
+    {
+      "id": "dependabot-dependabot-core",
+      "name": "Dependabot Core",
+      "category": "competitors",
+      "type": "github",
+      "source": "dependabot/dependabot-core",
+      "url": "https://github.com/dependabot/dependabot-core",
+      "description": "GitHub's Ruby engine for automated dependency-update PRs across 12+ language ecosystems; overlaps radar's version-diffing but occupies the 'act on it' half radar deliberately skips.",
+      "stars": 5687,
+      "status": "active",
+      "features": [
+        "Per-ecosystem update engines (npm, pypi, nuget, actions, gradle, cargo, go, ... — 12+ languages + Docker/Terraform/submodules/pre-commit)",
+        "Resolves the latest version compatible with the whole dep graph, generates updated manifests/lockfiles",
+        "PR descriptions embed the dep's changelog + release notes + commits (same problem radar's resolveChangelogRepo solves)",
+        "Cooldown / default-days: delay acting on a release N days (added v0.387, feature-flagged) to dodge yanked/bad releases",
+        "github-actions ecosystem — PRs pin updates for radar's own SHA-pinned workflow"
+      ],
+      "notes": "Orthogonal, not head-to-head: Dependabot OPENS PRs and resolves compatible versions; radar reads changelogs and grounds impact in the repo's roadmap, filing nothing unless asked. Radar's moat is the judgment layer Dependabot doesn't have ('does this bump matter for us', not just 'a bump exists'). Release cadence ~weekly, high-velocity incremental (Sorbet-typing ecosystems, 'Update graph' resiliency, per-ecosystem parser fixes) — no big-bang changes to watch. Top open issues (as of 2026-07) are all ecosystem-coverage asks: Gradle Tooling API (1192 reactions), sbt (275), mise (216), conda.env (191), deno (141) — the perennial 'support X' pressure, mirroring radar's own 4-place new-source-type extensibility cost. Also: their github-actions ecosystem keeps radar.yml's SHA pin current for consumers.",
+      "tags": [
+        "dependency-updates",
+        "github"
+      ]
+    },
+    {
+      "id": "microsoft-typescript",
+      "name": "TypeScript",
+      "category": "deps",
+      "type": "github",
+      "source": "microsoft/TypeScript",
+      "url": "https://github.com/microsoft/TypeScript",
+      "description": "The one dev dependency with real breaking-change surface: strict `tsc --noEmit` gates CI. Now on the 6.x bridge toward the 7.0 native (Go) compiler.",
+      "stars": 109860,
+      "status": "active",
+      "features": [
+        "erasableSyntaxOnly — enforces node-strippable syntax (no enums/namespaces); radar depends on this",
+        "Strict type checking (tsc --noEmit in CI)",
+        "Node ESM + explicit .ts extension resolution",
+        "6.x is the transitional line: deprecations/warnings that prepare code for the 7.0 native (tsgo/'Corsa') compiler"
+      ],
+      "notes": "Slow, predictable cadence (5.9 Oct-2025, 6.0 Mar-2026, 6.0.3 Apr-2026 = baseline) — quarterly, not a firehose. Two things to watch, both low near-term risk: (1) 6.x point releases can add deprecation warnings that a strict `tsc --noEmit` gate could turn into failures — the only realistic way TS breaks radar soon; (2) TS 7.0, the native Go port, is the real future event — when it lands, verify tsc --noEmit parity and that erasableSyntaxOnly semantics carry over. Good news: radar's whole TS discipline (erasableSyntaxOnly, explicit .ts import extensions, no enums/namespaces, bare-node execution) is exactly what the native compiler is built around — radar is already aligned with 7.0, so the port is a de-risking, not a migration. Top open issues are perennial language-design asks (nominal types 1218, partial generic inference 1086) — none radar-relevant. Zero runtime deps keeps this category intentionally thin.",
+      "tags": [
+        "typescript",
+        "dev-dep"
+      ]
+    },
+    {
+      "id": "agentskills-agentskills",
+      "name": "Agent Skills spec",
+      "category": "official",
+      "type": "github",
+      "source": "agentskills/agentskills",
+      "url": "https://github.com/agentskills/agentskills",
+      "description": "The specification radar is published against — the contract layer that lets one SKILL.md reach 45+ agent hosts. Deeper than claude-code: this defines the shape, that's just one consumer of it. Originally Anthropic's, now an open standard.",
+      "stars": 23172,
+      "status": "active",
+      "features": [
+        "SKILL.md frontmatter: name (req, <=64, lowercase/hyphen, must match dir), description (req, <=1024), license, compatibility (<=500), metadata, allowed-tools (experimental)",
+        "Directory layout: SKILL.md required; scripts/ references/ assets/ optional",
+        "Progressive disclosure: discovery (name+desc) -> activation (full SKILL.md) -> execution",
+        "Cross-host portability — the reason radar works on Codex, Cursor, Gemini CLI, etc."
+      ],
+      "notes": "COMPLIANCE CHECK (done 2026-07): radar's SKILL.md is spec-valid — name 'radar' (matches skills/radar/ dir), description present with what+when+keywords, license MIT. radar ships none of the optional fields. OPERATIONAL GOTCHA: this repo has no releases, so radar baselines it by COMMIT — and the commit stream is almost entirely 'add X to client showcase' (Pulumi Neo, ZeroClaw, Deep Code...), pure noise. When this entry fires an update, diff docs/specification.mdx and the frontmatter table specifically; ignore showcase commits. The actual spec is STABLE — the distribution-contract risk is real but low-velocity right now. Real watch item: the #1 open issue by far, 'Support Claude Code skills as commands frontmatter scheme' (253 reactions) — radar ships both a skill AND /radar slash commands, so if the spec standardizes command-vs-skill frontmatter, radar gains a portable way to declare /radar cross-host (today that relies on claude-code's plugin channel). Opportunity: the optional `compatibility` field fits radar exactly (needs bun or node>=22.18, gh>=2.90 to install) — a one-line addition that improves host compat messaging, though no host requires it yet (YAGNI until one does). Irrelevant to radar: skill-dependency/version-validation and npm-distribution RFCs (radar is zero-dep and gh/plugin-distributed). Pairs with [[github-cli]] (enforces packaging) and [[claude-code]] (one host).",
+      "tags": [
+        "spec",
+        "distribution"
+      ]
+    },
+    {
+      "id": "lilydjwg-nvchecker",
+      "name": "nvchecker",
+      "category": "competitors",
+      "type": "github",
+      "source": "lilydjwg/nvchecker",
+      "url": "https://github.com/lilydjwg/nvchecker",
+      "description": "New-version checker for software releases — radar's check step's closest relative. Same 'just watch, don't act' half as radar (unlike Renovate/Dependabot), config-driven with ~20 per-source adapters.",
+      "stars": 552,
+      "status": "active",
+      "features": [
+        "~20 source adapters: github, gitlab, gitea, bitbucket, pypi, npm, gems, cratesio, hackage, cpan, aur, archpkg, debianpkg, ubuntupkg, android_sdk, container, git, manual",
+        "Two escape-hatch sources: `regex` (scrape any webpage for a version) and `cmd` (run any command) — together they can track literally anything with no new typed adapter",
+        "TOML config declaring one entry per tracked software with its `source`",
+        "Reports the new version and nothing else — no changelog, no analysis"
+      ],
+      "notes": "The nearest architectural kin: both answer 'is there a newer version?' via pluggable source adapters and both deliberately stop at watching (no PRs). radar's differentiation is exactly nvchecker's ceiling — nvchecker hands you a version string; radar then fetches the changelog and grounds impact in the repo. THE idea worth stealing (💡, but YAGNI today): nvchecker's `regex`+`cmd` escape hatches. radar has 4 typed adapters (github/npm/pypi/nuget) and AGENTS.md says a new source type touches 4 places — expensive. A single generic `regex`-style source (fetch URL + extract version via pattern) would cover the entire long tail of tools that don't live on those 4 ecosystems, WITHOUT paying the 4-place cost per ecosystem. Not needed now: all 8 registry entries are github/npm-resolvable, curated registry stays small. Revisit only when a tool someone wants to track has no supported source. VALIDATION found this dive: nvchecker cuts releases sparsely (its author has an open issue admitting releases aren't made reliably), yet radar baselined it fine at 2.21 via the tag fallback — concrete proof radar's release->tag->commit ladder earns its keep on exactly this kind of repo. Community heat is low (top issue: luarocks support, 15) — the design, not the popularity, is the signal.",
+      "tags": [
+        "version-check",
+        "watch-only"
+      ]
+    }
+  ]
+}
