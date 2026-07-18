@@ -74,6 +74,10 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    A tool's FIRST check records a baseline (`NEW — tracking from X`):
    tracking starts at the version first seen, past releases are not
    analyzed. Updates fire from the next release onward.
+   `check` may end with a notice that the weekly workflow pins an older
+   radar release. Relay it and offer `init --workflow --force` — but the
+   old pin keeps working, so never run it unasked, and drop the subject
+   if the user passes.
 2. For each tool WITH an update: `radar.ts changelog <id>`.
 3. Analyze. For every meaningful change, ground it in this project:
    - Read the relevant part of THIS repo (roadmap, the subsystem the

@@ -174,6 +174,28 @@ async function cmdCheckUpdates(args: string[]): Promise<void> {
     log(RED, `Errors: ${result.errors.length}`)
   }
   console.log('')
+  await printSelfPinNotice()
+}
+
+/**
+ * The weekly workflow is SHA-pinned by design and an old pin keeps
+ * working — so never auto-advance it. When a newer radar release
+ * exists, say so once per check; the agent offers, the user decides.
+ * Human output only: the CI path is `check --json` and must stay JSON.
+ */
+async function printSelfPinNotice(): Promise<void> {
+  try {
+    const wfPath = join(process.cwd(), '.github', 'workflows', 'radar.yml')
+    if (!existsSync(wfPath)) return
+    const pinned = readFileSync(wfPath, 'utf8').match(/mralabs\/radar@([0-9a-f]{40}) # (\S+)/)
+    if (!pinned) return
+    const latest = await getLatestTagSha('mralabs/radar')
+    if (!latest || latest.sha === pinned[1]) return
+    log(YELLOW, `Weekly workflow pins radar ${pinned[2]}; ${latest.tag} is out — advance with \`init --workflow --force\` if you want it.`)
+    console.log('')
+  } catch {
+    // Advisory only — a failed lookup must never break check.
+  }
 }
 
 function cmdListTools(args: string[]): void {
