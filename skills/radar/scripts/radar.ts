@@ -481,7 +481,7 @@ function showHelp(): void {
   console.log('  5. mark-analyzed   moves the anchor so next run only shows new items')
   console.log('')
   console.log('Usage: bun radar.ts <command>')
-  console.log('  init [--workflow]                     Create .radar/ (+ weekly CI check that opens issues)')
+  console.log('  init [--workflow [--force]]           Create .radar/ (+ weekly CI check; --force re-pins an existing workflow)')
   console.log('  check [--tool X] [--category X] [--json]')
   console.log('                                        Fetch latest versions, diff against state')
   console.log('  list [--category X] [--has-updates] [--min-stars N]')
@@ -532,18 +532,21 @@ async function cmdInit(args: string[]): Promise<void> {
   // Workflow installation — the workflow runs the radar composite action
   // pinned to a commit SHA, so nothing floating ever executes in CI
   if (args.includes('--workflow')) {
+    // --force overwrites an existing workflow — how you advance the SHA
+    // pin after a new radar release. Local edits to the file are lost.
+    const force = args.includes('--force')
     const wfDir = join(process.cwd(), '.github', 'workflows')
     const wfPath = join(wfDir, 'radar.yml')
     // Pre-0.5 workflows run the CLI vendored at .github/radar/ — that
     // dir must NOT be called deletable while such a workflow still uses it
     const wfIsLegacy =
       existsSync(wfPath) && readFileSync(wfPath, 'utf8').includes('.github/radar/')
-    if (wfIsLegacy) {
+    if (wfIsLegacy && !force) {
       log(YELLOW, `${wfPath} is the pre-0.5 workflow (runs the vendored CLI).`)
       console.log('  To switch to the SHA-pinned action: delete BOTH that file and')
       console.log('  .github/radar/, then re-run `init --workflow`.')
-    } else if (existsSync(wfPath)) {
-      log(YELLOW, `${wfPath} exists — not overwritten (delete it to regenerate)`)
+    } else if (existsSync(wfPath) && !force) {
+      log(YELLOW, `${wfPath} exists — not overwritten (re-run with --force to regenerate)`)
     } else {
       // Fail loud: a workflow with an unresolved placeholder would just
       // break in CI later, where nobody is watching.
@@ -575,7 +578,7 @@ async function cmdInit(args: string[]): Promise<void> {
     // Pre-0.5 versions vendored the CLI into the consuming repo. Only
     // call it deletable once no workflow references it anymore.
     const legacyVendorDir = join(process.cwd(), '.github', 'radar')
-    if (existsSync(legacyVendorDir) && !wfIsLegacy) {
+    if (existsSync(legacyVendorDir) && (!wfIsLegacy || force)) {
       log(YELLOW, `${legacyVendorDir} is the old vendored CLI — no longer used, safe to delete.`)
     }
   }
