@@ -103,6 +103,14 @@ Two ways an eval lies green. Both have already happened here:
   mralabs/claude-plugins (the org marketplace; plugin channel only sees
   updates when that field changes). This repo has no marketplace.json —
   one org, one catalog.
+  Let `gh skill publish` create the tag — it refuses a tag that already
+  exists, so a hand-pushed `git tag` locks you out of the skill channel
+  and you have to `gh release create` on top of the bare tag instead
+  (`--dry-run` still validates). Three channels read three different
+  things: the plugin channel reads the two `version` fields, `init
+  --workflow` pins the newest semver **tag**'s SHA, and `gh skill
+  install` resolves the newest **release** — a tag without a release
+  leaves the skill channel on the old version.
 - Deterministic work belongs in scripts; judgment belongs in SKILL.md prose.
 - New source type touches four places: an adapter in `core/api/` (+ its
   export in `core/api/index.ts`), `TOOL_TYPES` in types.ts, the
