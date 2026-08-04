@@ -20,6 +20,7 @@ runs:
       run: |
         node "$GITHUB_ACTION_PATH/skills/radar/scripts/radar.ts" check --json > /tmp/radar.json
         echo "updates=$(jq '.updates | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"
+        echo "baselined=$(jq '.baselined | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"
         echo "errors=$(jq '.errors | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"
 
     - name: Write run summary
@@ -46,13 +47,18 @@ runs:
           echo "Up to date: $(jq '.upToDate | length' /tmp/radar.json) · Errors: $(jq '.errors | length' /tmp/radar.json)"
         } >> "$GITHUB_STEP_SUMMARY"
 
+    # Only new versions and new baselines are worth a commit. `lastChecked`
+    # moves on every run, so committing unconditionally means a bot commit
+    # in the consumer's repo every single week, saying nothing.
     - name: Commit updated state
+      if: steps.check.outputs.updates != '0' || steps.check.outputs.baselined != '0'
       shell: bash
       run: |
         git config user.name "radar-bot"
         git config user.email "radar-bot@users.noreply.github.com"
         git add .radar/versions.json
-        git diff --cached --quiet || git commit -m "chore(radar): weekly check" && git push
+        git commit -m "chore(radar): weekly check"
+        git push
 
     # Persistent fetch errors (renamed repo, deleted package) must surface
     # here too — a tool that errors every week is silently untracked, and
