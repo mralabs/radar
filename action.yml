@@ -82,6 +82,8 @@ runs:
           SECTIONS=$(printf '%s\n\n### ⚠ Check errors — these tools are not being tracked\n%s' "$SECTIONS" "$ERROR_LINES")
         fi
 
+        BODY=$(printf 'Pending as of %s:\n\n%s\n\nRun `/radar` locally for analysis and recommendations.\n\n<!-- radar-fingerprint: %s -->' "$(date -u +%F)" "$SECTIONS" "$FP")
+
         gh label create radar --color 1D76DB --description "radar ecosystem updates" --force
 
         # One rolling digest issue: reuse the open one, reopen a closed
@@ -91,10 +93,11 @@ runs:
           NUM=$(gh issue list --label radar --state closed --limit 1 --json number --jq '.[0].number // empty')
           if [ -n "$NUM" ]; then gh issue reopen "$NUM"; fi
         fi
+        # Fresh issue: creating it already notifies, and "everything pending"
+        # IS "everything new" — the body says it all, a comment would echo it.
         if [ -z "$NUM" ]; then
-          URL=$(gh issue create --title "📡 Radar digest" --label radar \
-            --body "Rolling digest of ecosystem updates. Run \`/radar\` locally for analysis.")
-          NUM="${URL##*/}"
+          gh issue create --title "📡 Radar digest" --label radar --body "$BODY"
+          exit 0
         fi
 
         # Same update set already reported? (fingerprint lives in comments)
@@ -106,5 +109,5 @@ runs:
 
         # Body = current state (edits don't notify); comment = what's new
         # (comments DO notify subscribers)
-        gh issue edit "$NUM" --body "$(printf 'Pending as of %s:\n\n%s\n\nRun `/radar` locally for analysis and recommendations.\n\n<!-- radar-fingerprint: %s -->' "$(date -u +%F)" "$SECTIONS" "$FP")"
+        gh issue edit "$NUM" --body "$BODY"
         gh issue comment "$NUM" --body "$(printf 'New since last digest (%s):\n\n%s\n\n<!-- radar-fingerprint: %s -->' "$(date -u +%F)" "$SECTIONS" "$FP")"
