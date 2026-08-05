@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: mralabs/radar@afd85f48872fb6e103bb976ee401a110818a2fe1 # v0.5.6
+      - uses: mralabs/radar@ccdf6e4a8480504583476970ae7eadc708dd1e4c # v0.5.7
 
       # ── Optional: full AI analysis written into the digest ─────────────
       # Requires ANTHROPIC_API_KEY secret. Uncomment to enable (and pin the
