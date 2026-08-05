@@ -24,6 +24,21 @@ export function generateToolId(source: string): string {
   return source.replace(/[^a-z0-9]/gi, '-').toLowerCase()
 }
 
+/**
+ * A web source is a full URL — slugging it raw yields
+ * `https---conductor-build-changelog`. Drop the protocol and www so the
+ * id reads like the product, keeping the path to separate two products
+ * that share a host.
+ */
+function webSlug(url: string): string {
+  try {
+    const { hostname, pathname } = new URL(url)
+    return `${hostname.replace(/^www\./, '')}${pathname}`.replace(/\/+$/, '')
+  } catch {
+    return url
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // Find Tool
 // ─────────────────────────────────────────────────────────────
@@ -65,7 +80,8 @@ export function addTool(
   source: string,
   options: AddToolOptions = {}
 ): AddToolResult {
-  const id = generateToolId(source)
+  const slug = type === 'web' ? webSlug(source) : source
+  const id = generateToolId(slug)
 
   // Check if already exists
   if (registry.tools.find(t => t.id === id)) {
@@ -77,11 +93,13 @@ export function addTool(
 
   const newTool: Tool = {
     id,
-    name: options.name || source.split('/').pop() || source,
+    // web: the host names the product ("conductor.build"); elsewhere the
+    // last source segment does ("anthropics/skills" → "skills")
+    name: options.name || (type === 'web' ? slug.split('/')[0] : source.split('/').pop()) || source,
     category: options.category || 'uncategorized',
     type,
     source,
-    url: type === 'github' ? `https://github.com/${source}` : null,
+    url: type === 'github' ? `https://github.com/${source}` : type === 'web' ? source : null,
     description: options.description ?? '',
     status: 'active',
     features: [],

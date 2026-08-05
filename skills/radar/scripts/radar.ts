@@ -244,6 +244,7 @@ function cmdAddTool(args: string[]): void {
     log(RED, 'Usage: bun radar.ts add <type> <source> [--category CAT]')
     log(BLUE, `Types: ${TOOL_TYPES.join(', ')}`)
     log(BLUE, 'Example: bun radar.ts add github anthropics/skills --category official')
+    log(BLUE, 'Example: bun radar.ts add web https://conductor.build/changelog --category competitors')
     process.exit(1)
   }
 
@@ -373,6 +374,10 @@ async function cmdChangelog(args: string[]): Promise<void> {
   } else if (result.type === 'changelog-file' && result.markdown) {
     log(YELLOW, `From ${result.path}:`)
     console.log(result.markdown)
+    console.log('')
+  } else if (result.type === 'web' && result.url) {
+    log(YELLOW, 'Release notes page:')
+    console.log(`  ${result.url}`)
     console.log('')
   } else if (result.type === 'commits' && result.commits) {
     log(YELLOW, 'Recent Commits:')
@@ -513,6 +518,7 @@ function showHelp(): void {
   console.log('  remove <tool-id>                      Untrack (clears its state too)')
   console.log('  show <tool-id>                        Tool details')
   console.log('  changelog <tool-id> [--json]          Releases/changelog/commits since last analysis; warns if incomplete')
+  console.log('                                        (web tools: the page URL — your agent reads it)')
   console.log('  mark-analyzed <tool-id> [version]     Record analysis done up to a version')
   console.log('  history <tool-id>                     Version history with breaking flags')
   console.log('  rate-limit                            GitHub API quota status')

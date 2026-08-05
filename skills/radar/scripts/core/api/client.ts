@@ -14,11 +14,11 @@ export interface FetchOptions {
 }
 
 /**
- * Fetch JSON from a URL
+ * GET a URL
  *
- * @returns Parsed JSON data, null for 404, or throws on error
+ * @returns Response, null for 404, or throws on error
  */
-export async function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
+async function request(url: string, accept: string, options: FetchOptions): Promise<Response | null> {
   const { headers = {}, timeout = DEFAULT_TIMEOUT } = options
 
   const controller = new AbortController()
@@ -29,7 +29,7 @@ export async function fetchJson<T>(url: string, options: FetchOptions = {}): Pro
       method: 'GET',
       headers: {
         'User-Agent': USER_AGENT,
-        Accept: 'application/json',
+        Accept: accept,
         ...headers
       },
       signal: controller.signal
@@ -46,7 +46,7 @@ export async function fetchJson<T>(url: string, options: FetchOptions = {}): Pro
       throw new Error(`HTTP ${response.status}: ${text}`)
     }
 
-    return await response.json() as T
+    return response
   } catch (error) {
     clearTimeout(timeoutId)
 
@@ -59,4 +59,24 @@ export async function fetchJson<T>(url: string, options: FetchOptions = {}): Pro
 
     throw new Error('Unknown error')
   }
+}
+
+/**
+ * Fetch JSON from a URL
+ *
+ * @returns Parsed JSON data, null for 404, or throws on error
+ */
+export async function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
+  const response = await request(url, 'application/json', options)
+  return response ? await response.json() as T : null
+}
+
+/**
+ * Fetch raw text (HTML, markdown) from a URL
+ *
+ * @returns Body text, null for 404, or throws on error
+ */
+export async function fetchText(url: string, options: FetchOptions = {}): Promise<string | null> {
+  const response = await request(url, 'text/html, text/plain, */*', options)
+  return response ? await response.text() : null
 }

@@ -6,13 +6,17 @@
 // Tool Types
 // ─────────────────────────────────────────────────────────────
 
-export const TOOL_TYPES = ['github', 'pypi', 'npm', 'nuget'] as const
+export const TOOL_TYPES = ['github', 'pypi', 'npm', 'nuget', 'web'] as const
 export type ToolType = (typeof TOOL_TYPES)[number]
 export type ToolStatus = 'active' | 'inactive' | 'archived'
 
 export interface ToolSource {
   package?: string
   repo?: string
+  /** type: web — changelog / release notes page */
+  url?: string
+  /** type: web — regex overriding the default version match on that page */
+  pattern?: string
 }
 
 export interface Tool {

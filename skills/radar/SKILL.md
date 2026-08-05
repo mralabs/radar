@@ -53,7 +53,15 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    script. Listing what you already added is not proposing.
 3. Once the user answers, add the approved entries via
    `radar.ts add <type> <source> --category X` (types: github, npm, pypi,
-   nuget). If they said yes to the weekly check, run
+   nuget, web). Use `web <url>` for anything with no repo and no package —
+   a closed-source product that only publishes a release notes page. It
+   tracks the first version-shaped string in that page's text; when that
+   is the wrong number (a "2026" heading, a plan price), open
+   `.radar/registry.json` and give the entry a pattern instead:
+   `"source": { "url": "…", "pattern": "Conductor (\\d+\\.\\d+\\.\\d+)" }`.
+   Verify against the live page before moving on — a wrong pattern reports
+   phantom updates every week.
+   If they said yes to the weekly check, run
    `radar.ts init --workflow` — idempotent: existing `.radar/` data is
    untouched, it only installs the workflow. Then enrich each entry's `features` and `notes` fields in
    `.radar/registry.json` — these drive analysis quality. Close by
@@ -78,7 +86,11 @@ bun <skill-dir>/scripts/radar.ts <command>   # or `node` (≥ 22.18) if bun isn'
    radar release. Relay it and offer `init --workflow --force` — but the
    old pin keeps working, so never run it unasked, and drop the subject
    if the user passes.
-2. For each tool WITH an update: `radar.ts changelog <id>`.
+2. For each tool WITH an update: `radar.ts changelog <id>`. For `web`
+   tools it hands back the page URL and the range instead of the notes —
+   radar machine-checks only the version string there. WebFetch the page
+   yourself and analyze that range; if the page shows nothing about those
+   versions, say so rather than reporting on whatever it does show.
 3. Analyze. For every meaningful change, ground it in this project:
    - Read the relevant part of THIS repo (roadmap, the subsystem the
      change touches) before claiming impact.
@@ -121,7 +133,7 @@ No boilerplate — a tool with nothing relevant gets one ✅ line.
 | Ask | Do |
 |-----|----|
 | `/radar help` | Explain how radar works in your own words: the init → check (NEW baseline) → changelog → analyze → mark-analyzed cycle, the optional weekly CI issue flow, and what `.radar/` holds. Use examples from THIS repo's registry. `radar.ts help` prints the CLI reference |
-| `/radar add <url or name>` | Infer type/source, `radar.ts add`, then fetch the README and fill `features`/`notes` in the registry |
+| `/radar add <url or name>` | Infer type/source, `radar.ts add`, then fetch the README and fill `features`/`notes` in the registry. No repo and no package — a product site — is the `web` type: find its changelog/release notes page (not the marketing page) and add that URL |
 | `/radar discover` | Web-search for new tools in the registry's categories; propose candidates with stars + one-liner; add only what the user approves. `discover` scans a category broadly; `deep` drills into one named tool |
 | `/radar deep <id or name/url>` | Read the tool's README, docs, recent releases, and its most-reacted open issues (top pain points and requested features — not the full list); report how it compares to this project. **Tracked** (id matches the registry): also update its `features`/`notes` and refresh `stars` (they're recorded at add time and go stale otherwise). **Untracked** (a name or URL): the research is identical — it runs off the web, not the registry — so do it anyway, then close with a reasoned add/skip recommendation and a category. Add only via `radar.ts add`, only if the user says yes |
 | `/radar list` / `show <id>` / `history <id>` | Run the CLI command, relay output |

@@ -8,6 +8,7 @@ import { getGitHubVersion, getGitHubReleasesSince, getGitHubCommits, getGitHubCo
 import { getPyPIVersion } from './api/index.ts'
 import { getNPMVersion } from './api/index.ts'
 import { getNuGetVersion } from './api/index.ts'
+import { getWebVersion } from './api/index.ts'
 import type {
   Tool,
   Registry,
@@ -53,6 +54,17 @@ function getPackageName(tool: Tool): string | null {
 }
 
 /**
+ * Page URL (+ optional version pattern) for a web tool. A bare string
+ * source is the URL; the object form carries the pattern override.
+ */
+function webSource(tool: Tool): { url: string | null; pattern?: string } {
+  if (typeof tool.source === 'string') {
+    return { url: tool.source }
+  }
+  return { url: tool.source.url ?? null, pattern: tool.source.pattern }
+}
+
+/**
  * Fetch version for a tool based on its type
  */
 async function fetchVersion(tool: Tool): Promise<VersionResult> {
@@ -74,6 +86,13 @@ async function fetchVersion(tool: Tool): Promise<VersionResult> {
 
     case 'nuget':
       return pkg ? getNuGetVersion(pkg) : { version: null, publishedAt: null, error: 'no source' }
+
+    case 'web': {
+      const { url, pattern } = webSource(tool)
+      return url
+        ? getWebVersion(url, pattern)
+        : { version: null, publishedAt: null, error: 'no source' }
+    }
 
     default:
       return { version: null, publishedAt: null, error: `unknown type: ${tool.type}` }
@@ -319,9 +338,11 @@ export interface ChangelogCommit {
 
 export interface ChangelogResult {
   tool: Tool
-  type: 'releases' | 'changelog-file' | 'commits'
+  type: 'releases' | 'changelog-file' | 'commits' | 'web'
   releases?: ChangelogRelease[]
   commits?: ChangelogCommit[]
+  /** The page to read (type: web) — radar fetches the version, not the notes */
+  url?: string
   /** Raw markdown slice of the repo's changelog file (type: changelog-file) */
   markdown?: string
   /** Which file the markdown came from, e.g. CHANGELOG.md */
@@ -444,6 +465,29 @@ export async function getChangelog(
     return null
   }
 
+  const versionData = versions?.tools[tool.id]
+
+  // A web tool has no repo to page through. Radar hands over the URL and
+  // the range instead of scraping — rendering HTML into readable notes is
+  // the agent's job, and a stripped-markup guess would look exhaustive
+  // while quietly dropping half the page.
+  if (tool.type === 'web') {
+    const { url } = webSource(tool)
+    if (!url) {
+      return { tool, type: 'web', error: `No URL for ${tool.name}` }
+    }
+    const from = versionData?.lastAnalyzedVersion ?? '(no baseline)'
+    const to = versionData?.currentVersion ?? '(unknown)'
+    return {
+      tool,
+      type: 'web',
+      url,
+      warning:
+        `radar does not read this page — fetch ${url} yourself and analyze ` +
+        `${from} → ${to}. Only the version string is machine-checked.`
+    }
+  }
+
   const { repo: source, bridgedPackage } = await resolveChangelogRepo(tool)
 
   if (!source) {
@@ -454,7 +498,7 @@ export async function getChangelog(
     }
   }
 
-  const sinceVersion = versions?.tools[tool.id]?.lastAnalyzedVersion ?? null
+  const sinceVersion = versionData?.lastAnalyzedVersion ?? null
 
   try {
     const { releases, anchorFound, truncated } = await getGitHubReleasesSince(

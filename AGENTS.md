@@ -116,5 +116,10 @@ Two ways an eval lies green. Both have already happened here:
   export in `core/api/index.ts`), `TOOL_TYPES` in types.ts, the
   `fetchVersion` switch in reports.ts, and — if changelogs should work for
   it — `resolveChangelogRepo` in reports.ts. Add stubbed adapter tests.
+  The `web` type (closed-source products: fetch page, regex the version)
+  is the exception that skips `resolveChangelogRepo` — it has no repo, so
+  `getChangelog` returns the URL + range and the agent WebFetches it.
+  Radar does not scrape release notes; stripped-markup prose would look
+  exhaustive while silently dropping half the page.
   Re-export from `core/index.ts` only if the client should be public
   barrel API (not needed for CLI behavior).
