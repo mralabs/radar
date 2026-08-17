@@ -1,11 +1,17 @@
 {
-  "lastChecked": "2026-08-10T08:23:49.172Z",
+  "lastChecked": "2026-08-17T07:48:10.907Z",
   "tools": {
     "dependabot-dependabot-core": {
-      "lastChecked": "2026-08-10T08:23:48.554Z",
-      "currentVersion": "0.390.0",
-      "latestReleaseDate": "2026-08-03T15:09:31Z",
+      "lastChecked": "2026-08-17T07:48:10.391Z",
+      "currentVersion": "0.391.0",
+      "latestReleaseDate": "2026-08-10T14:52:59Z",
       "history": [
+        {
+          "version": "0.391.0",
+          "date": "2026-08-10T14:52:59Z",
+          "type": "minor",
+          "breaking": false
+        },
         {
           "version": "0.390.0",
           "date": "2026-08-03T15:09:31Z",
@@ -34,10 +40,16 @@
       "lastAnalyzedVersion": "0.387.0"
     },
     "renovatebot-renovate": {
-      "lastChecked": "2026-08-10T08:23:48.697Z",
-      "currentVersion": "44.17.3",
-      "latestReleaseDate": "2026-08-10T08:19:29Z",
+      "lastChecked": "2026-08-17T07:48:10.408Z",
+      "currentVersion": "44.31.0",
+      "latestReleaseDate": "2026-08-16T21:44:44Z",
       "history": [
+        {
+          "version": "44.31.0",
+          "date": "2026-08-16T21:44:44Z",
+          "type": "minor",
+          "breaking": false
+        },
         {
           "version": "44.17.3",
           "date": "2026-08-10T08:19:29Z",
@@ -72,10 +84,16 @@
       "lastAnalyzedVersion": "43.270.0"
     },
     "claude-code": {
-      "lastChecked": "2026-08-10T08:23:48.505Z",
-      "currentVersion": "2.1.226",
-      "latestReleaseDate": "2026-08-08T02:48:05Z",
+      "lastChecked": "2026-08-17T07:48:10.466Z",
+      "currentVersion": "2.1.233",
+      "latestReleaseDate": "2026-08-14T22:20:57Z",
       "history": [
+        {
+          "version": "2.1.233",
+          "date": "2026-08-14T22:20:57Z",
+          "type": "patch",
+          "breaking": false
+        },
         {
           "version": "2.1.226",
           "date": "2026-08-08T02:48:05Z",
@@ -104,7 +122,7 @@
       "lastAnalyzedVersion": "2.1.214"
     },
     "microsoft-typescript": {
-      "lastChecked": "2026-08-10T08:23:48.546Z",
+      "lastChecked": "2026-08-17T07:48:10.508Z",
       "currentVersion": "6.0.3",
       "latestReleaseDate": "2026-04-16T23:43:08Z",
       "history": [
@@ -118,7 +136,7 @@
       "lastAnalyzedVersion": "6.0.3"
     },
     "oven-sh-bun": {
-      "lastChecked": "2026-08-10T08:23:48.542Z",
+      "lastChecked": "2026-08-17T07:48:10.402Z",
       "currentVersion": "bun-v1.3.14",
       "latestReleaseDate": "2026-05-13T03:48:28Z",
       "history": [
@@ -132,7 +150,7 @@
       "lastAnalyzedVersion": "bun-v1.3.14"
     },
     "github-cli": {
-      "lastChecked": "2026-08-10T08:23:48.524Z",
+      "lastChecked": "2026-08-17T07:48:10.445Z",
       "currentVersion": "2.97.0",
       "latestReleaseDate": "2026-07-31T02:04:00Z",
       "history": [
@@ -152,10 +170,16 @@
       "lastAnalyzedVersion": "2.96.0"
     },
     "lilydjwg-nvchecker": {
-      "lastChecked": "2026-08-10T08:23:48.877Z",
-      "currentVersion": "2.21",
+      "lastChecked": "2026-08-17T07:48:10.729Z",
+      "currentVersion": "2.22",
       "latestReleaseDate": null,
       "history": [
+        {
+          "version": "2.22",
+          "date": "2026-08-17T07:48:10.729Z",
+          "type": "minor",
+          "breaking": false
+        },
         {
           "version": "2.21",
           "date": "2026-07-18T15:23:59.832Z",
@@ -166,7 +190,7 @@
       "lastAnalyzedVersion": "2.21"
     },
     "agentskills-agentskills": {
-      "lastChecked": "2026-08-10T08:23:49.172Z",
+      "lastChecked": "2026-08-17T07:48:10.907Z",
       "currentVersion": "commit-69ef37e",
       "latestReleaseDate": "2026-08-09T20:36:04Z",
       "history": [
