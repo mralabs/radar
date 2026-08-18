@@ -13,6 +13,7 @@ skills/radar/          the installable skill (the only dir a skill install ships
 ├── SKILL.md           agent behavior: init/check/analyze/mark-analyzed cycle
 ├── scripts/
 │   ├── radar.ts       thin CLI — command dispatch, printing, .radar/ paths
+│   ├── auth.ts        GitHub token resolution (env → gh CLI); outside core/
 │   └── core/          self-contained domain logic (no imports outside core/)
 │       └── api/       one adapter per source: github, npm, pypi, nuget
 └── templates/         registry seed + weekly GitHub Actions workflow
@@ -77,8 +78,16 @@ Two ways an eval lies green. Both have already happened here:
   returning defaults (a default + save wipes user data). Incomplete ranges
   (unfound changelog anchor, fetch caps) must surface a `warning`, never look
   exhaustive. Failed fetches must not overwrite last-known version state.
-- **Tokens are env-only** (`GITHUB_TOKEN`/`GH_TOKEN`). Never read secrets from
-  files: `.radar/config.json` is git-tracked by design.
+- **Never read a token from a file.** `.radar/config.json` is git-tracked by
+  design, so a secret must not be configurable there. The resolution order is
+  `GITHUB_TOKEN` → `GH_TOKEN` → `gh auth token --hostname github.com`, and an
+  empty var counts as unset. The gh step is a best-effort shortcut, not a
+  dependency: missing gh, logged-out gh, a GHES-only login, or a hung call (3s
+  timeout) all fall through to anonymous 60 req/h — no command may require it
+  to succeed. It lives in `auth.ts`, never in `core/`: core stays
+  subprocess-free and deterministic. `auth.ts` takes its gh runner as a
+  defaulted parameter so `tests/auth.test.ts` can fake every branch without
+  spawning anything.
 - **Zero runtime dependencies.** Built-in `fetch` and `node:` modules only;
   dev-deps are for typecheck/tests. The CLI must run with bare `bun` AND
   bare `node` ≥ 22.18: relative imports carry explicit `.ts` extensions and

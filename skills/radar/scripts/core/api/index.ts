@@ -19,8 +19,7 @@ export {
   getLatestTagSha,
   extractGitHubRepo,
   getGitHubRateLimit,
-  setGitHubToken,
-  getGitHubToken
+  setGitHubToken
 } from './github.ts'
 export { getPyPIVersion, getPyPIRepoUrl } from './pypi.ts'
 export { getNPMVersion, getNPMRepoUrl } from './npm.ts'

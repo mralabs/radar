@@ -23,7 +23,6 @@ import {
   getToolDetails,
   markAnalyzed,
   setGitHubToken,
-  getGitHubToken,
   getGitHubRateLimit,
   getGitHubFileText,
   getLatestTagSha,
@@ -31,6 +30,7 @@ import {
   getBreakingChanges
 } from './core/index.ts'
 import type { ToolType } from './core/index.ts'
+import { resolveGitHubToken } from './auth.ts'
 
 // ─────────────────────────────────────────────────────────────
 // Paths — all data lives in the consuming repo's .radar/ dir
@@ -98,11 +98,12 @@ function loadEnvFile(): void {
 }
 
 /**
- * Initialize GitHub token from environment only — never from files, so a
- * secret can't end up in the git-tracked .radar/config.json
+ * Initialize the GitHub token for this run.
+ *
+ * Resolution order and its rationale live in auth.ts.
  */
 function initGitHubToken(): void {
-  const token = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN
+  const token = resolveGitHubToken()
   if (token) {
     setGitHubToken(token)
   }
@@ -484,8 +485,9 @@ async function cmdRateLimit(): Promise<void> {
   console.log('')
 
   if (!rateLimit.authenticated) {
-    log(YELLOW, 'Tip: Set the GITHUB_TOKEN env var to increase limit to 5000/hour')
-    console.log(`     You can use $GITHUB_TOKEN or \${GITHUB_TOKEN} to reference env vars`)
+    log(YELLOW, 'Tip: authenticate to raise the limit to 5000/hour')
+    console.log('     Set GITHUB_TOKEN (or GH_TOKEN), or run `gh auth login` — with')
+    console.log('     neither var set, radar falls back to `gh auth token`.')
     console.log('')
   }
 }
@@ -525,8 +527,9 @@ function showHelp(): void {
   console.log('')
   console.log(`Types: ${TOOL_TYPES.join(', ')}`)
   console.log('')
-  console.log('Data lives in ./.radar/ (git-tracked JSON). Set the GITHUB_TOKEN')
-  console.log('env var to lift the anonymous 60 req/h GitHub limit.')
+  console.log('Data lives in ./.radar/ (git-tracked JSON). To lift the anonymous')
+  console.log('60 req/h GitHub limit set GITHUB_TOKEN (or GH_TOKEN) — or just stay')
+  console.log('logged in to the gh CLI, which radar falls back to.')
   console.log('')
 }
 
@@ -582,7 +585,8 @@ async function cmdInit(args: string[]): Promise<void> {
       if (!pin) {
         throw new Error(
           'Could not resolve the latest radar release SHA from the GitHub API — ' +
-            'check network/GITHUB_TOKEN and re-run `init --workflow`.'
+            'check the network and `rate-limit` (anonymous 60/h runs out fast), ' +
+            'then re-run `init --workflow`.'
         )
       }
       // The latest tag and this skill's version are independent — a tag
@@ -620,7 +624,7 @@ async function main(): Promise<void> {
   // Load .env file if exists
   loadEnvFile()
 
-  // Initialize GitHub token from config
+  // Resolve the GitHub token — env vars first, then the gh CLI
   initGitHubToken()
 
   const args = process.argv.slice(2)

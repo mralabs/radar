@@ -50,7 +50,7 @@
       "type": "github",
       "source": "cli/cli",
       "url": "https://github.com/cli/cli",
-      "description": "`gh skill install` is radar's primary distribution channel (spec-compliant, 45+ hosts). Requires gh >= 2.90. NOT a radar-runtime dependency — the CLI uses fetch + GITHUB_TOKEN, never shells out to gh.",
+      "description": "`gh skill install` is radar's primary distribution channel (spec-compliant, 45+ hosts). Requires gh >= 2.90. Not a radar-runtime dependency: the CLI fetches directly and only shells out to `gh auth token` as an optional fallback when GITHUB_TOKEN/GH_TOKEN are unset — missing or logged-out gh just stays anonymous.",
       "stars": 45313,
       "status": "active",
       "features": [
@@ -59,7 +59,7 @@
         "gh repo read-file / read-dir — read repo contents without cloning (v2.95, preview)",
         "Frequent security releases (v2.93 attestation auth leak, v2.96 codespace jupyter RCE)"
       ],
-      "notes": "Zero radar-CODE impact: radar's CLI reads GITHUB_TOKEN from env and fetches directly — it never invokes gh, so gh's security fixes are user hygiene, not radar's concern. The real surface is DISTRIBUTION, and `gh skill` is immature with live bugs: preview rejects paths install accepts (#17), root-level SKILL.md not discovered (radar dodges this — it ships skills/radar/SKILL.md, not a root file), no GHES support (15), rate-limiting makes discovery unusable (echoes radar's own 60/h anon warning), no uninstall command yet. radar already de-risks the important ones: the skills/radar/ layout avoids the root-discovery bug, and the documented 'just clone skills/radar/' fallback covers GHES + rate-limited users. The >= 2.90 pin is a FEATURE floor (where gh skill landed), not a security floor — gh has shipped CVE fixes above it (2.93, 2.96), so tell users to keep gh current for their own sake. Cadence ~biweekly. gh repo read-file (v2.95) is conceptually adjacent to radar's changelog fetching but NOT adoptable — radar's zero-runtime-dep invariant forbids a gh dependency.",
+      "notes": "Near-zero radar-CODE impact: radar's CLI fetches directly and touches gh only for the optional `gh auth token` fallback (v0.7.0), so gh's security fixes are mostly user hygiene, not radar's concern. The real surface is DISTRIBUTION, and `gh skill` is immature with live bugs: preview rejects paths install accepts (#17), root-level SKILL.md not discovered (radar dodges this — it ships skills/radar/SKILL.md, not a root file), no GHES support (15), rate-limiting makes discovery unusable (echoes radar's own 60/h anon warning), no uninstall command yet. radar already de-risks the important ones: the skills/radar/ layout avoids the root-discovery bug, and the documented 'just clone skills/radar/' fallback covers GHES + rate-limited users. The >= 2.90 pin is a FEATURE floor (where gh skill landed), not a security floor — gh has shipped CVE fixes above it (2.93, 2.96), so tell users to keep gh current for their own sake. Cadence ~biweekly. gh repo read-file (v2.95) is conceptually adjacent to radar's changelog fetching but NOT adoptable — the zero-runtime-dep invariant allows gh only as a best-effort fallback that can fail silently, never as the transport a command needs to succeed.",
       "tags": [
         "cli",
         "distribution"

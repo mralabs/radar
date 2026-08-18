@@ -60,7 +60,6 @@ export {
   getGitHubFileText,
   getLatestTagSha,
   setGitHubToken,
-  getGitHubToken,
   getPyPIVersion,
   getNPMVersion,
   getNuGetVersion

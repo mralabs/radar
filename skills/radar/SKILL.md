@@ -148,8 +148,10 @@ No boilerplate — a tool with nothing relevant gets one ✅ line.
   but check radar.yml first: the pre-0.5 workflow RUNS that dir. If
   radar.yml references `.github/radar/`, delete both together and re-run
   `init --workflow`; only then is the dir safe to remove.
-- GitHub API is rate-limited (60/h anonymous). If checks error, set
-  `GITHUB_TOKEN` env — `radar.ts rate-limit` shows current quota.
+- GitHub API is rate-limited (60/h anonymous). Radar authenticates from
+  `GITHUB_TOKEN`/`GH_TOKEN`, or falls back to `gh auth token` when neither
+  is set. If checks error, run `radar.ts rate-limit` — it shows the current
+  quota and whether the run is authenticated at all.
 - Registry `notes`/`features` are curated knowledge, not cache — improve
   them whenever a deep-dive teaches you something.
 - Never auto-add tools or auto-create tasks; the registry stays curated

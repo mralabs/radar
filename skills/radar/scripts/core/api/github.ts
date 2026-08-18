@@ -21,13 +21,6 @@ export function setGitHubToken(token: string | null): void {
 }
 
 /**
- * Get the current GitHub token
- */
-export function getGitHubToken(): string | null {
-  return githubToken
-}
-
-/**
  * Get fetch options with authorization header if token is set
  */
 export function getAuthOptions(): FetchOptions {

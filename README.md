@@ -90,10 +90,13 @@ reviewed commit SHA (same supply-chain policy as the rest of the workflow).
 .radar/
 ├── registry.json   # tracked tools: categories, features, curated notes
 ├── versions.json   # last-known versions + history
-└── config.json     # taskSink — where 🔥/💡 findings get filed (tokens are env-only: GITHUB_TOKEN)
+└── config.json     # taskSink — where 🔥/💡 findings get filed (never a token: this file is git-tracked)
 ```
 
-Set `GITHUB_TOKEN` env to lift the anonymous 60 req/h GitHub API limit.
+To lift the anonymous 60 req/h GitHub API limit, set `GITHUB_TOKEN` (or
+`GH_TOKEN`). With neither set, radar falls back to `gh auth token`, so a
+machine already logged in to the gh CLI is authenticated without any setup —
+and stays anonymous if gh is missing or logged out.
 
 ## License
 
