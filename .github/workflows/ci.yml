@@ -28,8 +28,9 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      # dual-runtime invariant: the CLI must also run as a bare script
-      - run: node skills/radar/scripts/radar.ts help > /dev/null
+      # dual-runtime invariant: the CLI must also run as a bare script, and
+      # its usage strings name the interpreter that actually launched it
+      - run: "node skills/radar/scripts/radar.ts help | grep -q 'Usage: node radar.ts'"
 
   bun-smoke:
     # bun is no longer part of the dev toolchain, but SKILL.md still offers it
@@ -38,4 +39,4 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - run: bun skills/radar/scripts/radar.ts help > /dev/null
+      - run: "bun skills/radar/scripts/radar.ts help | grep -q 'Usage: bun radar.ts'"
