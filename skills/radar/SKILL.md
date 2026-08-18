@@ -15,12 +15,12 @@ All data lives in the consuming repo under `.radar/` (git-tracked JSON).
 Run every command from the repo root.
 
 ```bash
-node <skill-dir>/scripts/radar.ts <command>  # `bun` works too, if you have it
+node <skill-dir>/scripts/radar.js <command>  # or `bun` — needed if node is older than 22.18
 ```
 
 ## First use in a repo: `/radar init`
 
-1. Run `radar.ts init`.
+1. Run `radar.js init`.
 2. Read the project's context (README, CLAUDE.md/AGENTS.md, package
    manifest, roadmap docs) and **propose seed entries** per category:
    - `official` — tools the project builds on (for an agent-adjacent
@@ -49,10 +49,10 @@ node <skill-dir>/scripts/radar.ts <command>  # `bun` works too, if you have it
    Then **stop and end your turn with that proposal.** Init is a two-turn
    flow: propose, wait, write. Ask everything you need in the first turn,
    so the user answers once. A tool the user has not named does not enter
-   the registry — not via `radar.ts add`, not via a hand-edit, not via a
+   the registry — not via `radar.js add`, not via a hand-edit, not via a
    script. Listing what you already added is not proposing.
 3. Once the user answers, add the approved entries via
-   `radar.ts add <type> <source> --category X` (types: github, npm, pypi,
+   `radar.js add <type> <source> --category X` (types: github, npm, pypi,
    nuget, web). Use `web <url>` for anything with no repo and no package —
    a closed-source product that only publishes a release notes page. It
    tracks the first version-shaped string in that page's text; when that
@@ -62,7 +62,7 @@ node <skill-dir>/scripts/radar.ts <command>  # `bun` works too, if you have it
    Verify against the live page before moving on — a wrong pattern reports
    phantom updates every week.
    If they said yes to the weekly check, run
-   `radar.ts init --workflow` — idempotent: existing `.radar/` data is
+   `radar.js init --workflow` — idempotent: existing `.radar/` data is
    untouched, it only installs the workflow. Then enrich each entry's `features` and `notes` fields in
    `.radar/registry.json` — these drive analysis quality. Close by
    relaying that knowledge, not just a version table: one or two lines
@@ -76,7 +76,7 @@ node <skill-dir>/scripts/radar.ts <command>  # `bun` works too, if you have it
 
 ## Main flow: `/radar` (no args)
 
-1. `radar.ts check` — fetches latest versions, diffs against known state.
+1. `radar.js check` — fetches latest versions, diffs against known state.
    No `.radar/` yet? The CLI says so and exits — don't improvise: run the
    `/radar init` flow above (propose, wait, write), then resume here.
    A tool's FIRST check records a baseline (`NEW — tracking from X`):
@@ -86,7 +86,7 @@ node <skill-dir>/scripts/radar.ts <command>  # `bun` works too, if you have it
    radar release. Relay it and offer `init --workflow --force` — but the
    old pin keeps working, so never run it unasked, and drop the subject
    if the user passes.
-2. For each tool WITH an update: `radar.ts changelog <id>`. For `web`
+2. For each tool WITH an update: `radar.js changelog <id>`. For `web`
    tools it hands back the page URL and the range instead of the notes —
    radar machine-checks only the version string there. WebFetch the page
    yourself and analyze that range; if the page shows nothing about those
@@ -122,7 +122,7 @@ node <skill-dir>/scripts/radar.ts <command>  # `bun` works too, if you have it
    Offer, never act: no task, issue or file gets created until the user
    says yes. A `taskSink` records WHERE findings go if the user wants
    them filed, not standing permission to file them.
-5. `radar.ts mark-analyzed <id>` for each tool you covered, so the next
+5. `radar.js mark-analyzed <id>` for each tool you covered, so the next
    run only surfaces new material.
 
 Report format: lead with the one-line verdict per tool, details after.
@@ -132,10 +132,10 @@ No boilerplate — a tool with nothing relevant gets one ✅ line.
 
 | Ask | Do |
 |-----|----|
-| `/radar help` | Explain how radar works in your own words: the init → check (NEW baseline) → changelog → analyze → mark-analyzed cycle, the optional weekly CI issue flow, and what `.radar/` holds. Use examples from THIS repo's registry. `radar.ts help` prints the CLI reference |
-| `/radar add <url or name>` | Infer type/source, `radar.ts add`, then fetch the README and fill `features`/`notes` in the registry. No repo and no package — a product site — is the `web` type: find its changelog/release notes page (not the marketing page) and add that URL |
+| `/radar help` | Explain how radar works in your own words: the init → check (NEW baseline) → changelog → analyze → mark-analyzed cycle, the optional weekly CI issue flow, and what `.radar/` holds. Use examples from THIS repo's registry. `radar.js help` prints the CLI reference |
+| `/radar add <url or name>` | Infer type/source, `radar.js add`, then fetch the README and fill `features`/`notes` in the registry. No repo and no package — a product site — is the `web` type: find its changelog/release notes page (not the marketing page) and add that URL |
 | `/radar discover` | Web-search for new tools in the registry's categories; propose candidates with stars + one-liner; add only what the user approves. `discover` scans a category broadly; `deep` drills into one named tool |
-| `/radar deep <id or name/url>` | Read the tool's README, docs, recent releases, and its most-reacted open issues (top pain points and requested features — not the full list); report how it compares to this project. **Tracked** (id matches the registry): also update its `features`/`notes` and refresh `stars` (they're recorded at add time and go stale otherwise). **Untracked** (a name or URL): the research is identical — it runs off the web, not the registry — so do it anyway, then close with a reasoned add/skip recommendation and a category. Add only via `radar.ts add`, only if the user says yes |
+| `/radar deep <id or name/url>` | Read the tool's README, docs, recent releases, and its most-reacted open issues (top pain points and requested features — not the full list); report how it compares to this project. **Tracked** (id matches the registry): also update its `features`/`notes` and refresh `stars` (they're recorded at add time and go stale otherwise). **Untracked** (a name or URL): the research is identical — it runs off the web, not the registry — so do it anyway, then close with a reasoned add/skip recommendation and a category. Add only via `radar.js add`, only if the user says yes |
 | `/radar list` / `show <id>` / `history <id>` | Run the CLI command, relay output |
 
 ## Notes
@@ -150,7 +150,7 @@ No boilerplate — a tool with nothing relevant gets one ✅ line.
   `init --workflow`; only then is the dir safe to remove.
 - GitHub API is rate-limited (60/h anonymous). Radar authenticates from
   `GITHUB_TOKEN`/`GH_TOKEN`, or falls back to `gh auth token` when neither
-  is set. If checks error, run `radar.ts rate-limit` — it shows the current
+  is set. If checks error, run `radar.js rate-limit` — it shows the current
   quota and whether the run is authenticated at all.
 - Registry `notes`/`features` are curated knowledge, not cache — improve
   them whenever a deep-dive teaches you something.

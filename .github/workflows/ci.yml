@@ -30,7 +30,27 @@ jobs:
       - run: npm test
       # dual-runtime invariant: the CLI must also run as a bare script, and
       # its usage strings name the interpreter that actually launched it
-      - run: "node skills/radar/scripts/radar.ts help | grep -q 'Usage: node radar.ts'"
+      - run: "node skills/radar/scripts/radar.js help | grep -q 'Usage: node radar.js'"
+
+  too-old-node:
+    # radar.js exists to EXPLAIN a too-old runtime instead of crashing inside
+    # the module loader. That only holds while the launcher itself stays free
+    # of module syntax and modern operators — and a regression there would
+    # leave every other job green, because they all run node new enough not to
+    # care. This is the only job that can see it.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20.x
+      - name: launcher explains the floor rather than crashing
+        run: |
+          if node skills/radar/scripts/radar.js help; then
+            echo "expected a non-zero exit on node 20" >&2
+            exit 1
+          fi
+          node skills/radar/scripts/radar.js help 2>&1 | grep -q 'radar needs node >= 22.18'
 
   bun-smoke:
     # bun is no longer part of the dev toolchain, but SKILL.md still offers it
@@ -39,4 +59,4 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - run: "bun skills/radar/scripts/radar.ts help | grep -q 'Usage: bun radar.ts'"
+      - run: "bun skills/radar/scripts/radar.js help | grep -q 'Usage: bun radar.js'"

@@ -63,7 +63,7 @@ should go (a task board, GitHub issues, a spec file) and remembers it —
 but nothing gets created until you say so.
 
 Deterministic work (version checks against GitHub/npm/PyPI/NuGet,
-changelog fetching, state) runs in the bundled CLI (`scripts/radar.ts`,
+changelog fetching, state) runs in the bundled CLI (`scripts/radar.js`,
 zero deps, bun or node). The agent does the judgment: compares changes
 against your roadmap and code, produces recommendations. Changelogs come
 from GitHub releases, falling back to the repo's `CHANGELOG.md`, then to

@@ -18,7 +18,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
-        node "$GITHUB_ACTION_PATH/skills/radar/scripts/radar.ts" check --json > /tmp/radar.json
+        node "$GITHUB_ACTION_PATH/skills/radar/scripts/radar.js" check --json > /tmp/radar.json
         echo "updates=$(jq '.updates | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"
         echo "baselined=$(jq '.baselined | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"
         echo "errors=$(jq '.errors | length' /tmp/radar.json)" >> "$GITHUB_OUTPUT"

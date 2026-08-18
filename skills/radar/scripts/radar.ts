@@ -41,10 +41,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 /**
  * How this process was actually launched, for usage strings.
  *
- * The CLI runs under both node and bun, so hardcoding either one prints the
- * wrong command to half the users. argv[0] is the interpreter, whichever it is.
+ * Both halves are read from argv rather than hardcoded, because both vary: the
+ * CLI runs under node and bun, and it is reached either through the radar.js
+ * launcher or by pointing a runtime straight at radar.ts. Printing a command
+ * the reader cannot paste back is the whole failure this avoids.
  */
 const RUNTIME = basename(process.argv[0] ?? 'node')
+const ENTRY = basename(process.argv[1] ?? 'radar.js')
 const TEMPLATES_DIR = join(__dirname, '..', 'templates')
 const RADAR_DIR = join(process.cwd(), '.radar')
 const REGISTRY_PATH = join(RADAR_DIR, 'registry.json')
@@ -250,10 +253,10 @@ function cmdAddTool(args: string[]): void {
 
   if (!type || !source || !TOOL_TYPES.includes(type)) {
     if (type && source) log(RED, `Unknown type '${type}'`)
-    log(RED, `Usage: ${RUNTIME} radar.ts add <type> <source> [--category CAT]`)
+    log(RED, `Usage: ${RUNTIME} ${ENTRY} add <type> <source> [--category CAT]`)
     log(BLUE, `Types: ${TOOL_TYPES.join(', ')}`)
-    log(BLUE, `Example: ${RUNTIME} radar.ts add github anthropics/skills --category official`)
-    log(BLUE, `Example: ${RUNTIME} radar.ts add web https://conductor.build/changelog --category competitors`)
+    log(BLUE, `Example: ${RUNTIME} ${ENTRY} add github anthropics/skills --category official`)
+    log(BLUE, `Example: ${RUNTIME} ${ENTRY} add web https://conductor.build/changelog --category competitors`)
     process.exit(1)
   }
 
@@ -276,7 +279,7 @@ function cmdRemoveTool(args: string[]): void {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} radar.ts remove <tool-id>`)
+    log(RED, `Usage: ${RUNTIME} ${ENTRY} remove <tool-id>`)
     return
   }
 
@@ -304,7 +307,7 @@ function cmdShowTool(args: string[]): void {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} radar.ts show <tool-id>`)
+    log(RED, `Usage: ${RUNTIME} ${ENTRY} show <tool-id>`)
     return
   }
 
@@ -342,8 +345,8 @@ async function cmdChangelog(args: string[]): Promise<void> {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} radar.ts changelog <tool-id> [--json]`)
-    log(BLUE, `Example: ${RUNTIME} radar.ts changelog spec-kit`)
+    log(RED, `Usage: ${RUNTIME} ${ENTRY} changelog <tool-id> [--json]`)
+    log(BLUE, `Example: ${RUNTIME} ${ENTRY} changelog spec-kit`)
     return
   }
 
@@ -402,8 +405,8 @@ function cmdMarkAnalyzed(args: string[]): void {
   const version = args[2]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} radar.ts mark-analyzed <tool-id> [version]`)
-    log(BLUE, `Example: ${RUNTIME} radar.ts mark-analyzed agent-os 3.0.0`)
+    log(RED, `Usage: ${RUNTIME} ${ENTRY} mark-analyzed <tool-id> [version]`)
+    log(BLUE, `Example: ${RUNTIME} ${ENTRY} mark-analyzed agent-os 3.0.0`)
     log(BLUE, 'If version is omitted, uses currentVersion')
     return
   }
@@ -427,8 +430,8 @@ function cmdHistory(args: string[]): void {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} radar.ts history <tool-id>`)
-    log(BLUE, `Example: ${RUNTIME} radar.ts history agent-os`)
+    log(RED, `Usage: ${RUNTIME} ${ENTRY} history <tool-id>`)
+    log(BLUE, `Example: ${RUNTIME} ${ENTRY} history agent-os`)
     return
   }
 
@@ -517,7 +520,7 @@ function showHelp(): void {
   console.log('  4. (agent reads them, compares against this repo, recommends)')
   console.log('  5. mark-analyzed   moves the anchor so next run only shows new items')
   console.log('')
-  console.log(`Usage: ${RUNTIME} radar.ts <command>`)
+  console.log(`Usage: ${RUNTIME} ${ENTRY} <command>`)
   console.log('  init [--workflow [--force]]           Create .radar/ (+ weekly CI check; --force re-pins an existing workflow)')
   console.log('  check [--tool X] [--category X] [--json]')
   console.log('                                        Fetch latest versions, diff against state')

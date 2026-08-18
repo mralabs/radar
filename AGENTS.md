@@ -12,6 +12,8 @@ action.yml             composite action consumers run SHA-pinned in weekly CI
 skills/radar/          the installable skill (the only dir a skill install ships)
 ├── SKILL.md           agent behavior: init/check/analyze/mark-analyzed cycle
 ├── scripts/
+│   ├── radar.js       entry point — plain .js so it starts on ANY node and
+│   │                  can explain a too-old runtime instead of crashing
 │   ├── radar.ts       thin CLI — command dispatch, printing, .radar/ paths
 │   ├── auth.ts        GitHub token resolution (env → gh CLI); outside core/
 │   └── core/          self-contained domain logic (no imports outside core/)
@@ -34,7 +36,7 @@ artifacts you wouldn't ship.
 ```bash
 npm test                             # all tests — network-free, must pass
 npm run typecheck                    # strict tsc --noEmit, must pass
-node skills/radar/scripts/radar.ts help
+node skills/radar/scripts/radar.js help
 ```
 
 CI enforces both on every push/PR.
@@ -88,6 +90,15 @@ Two ways an eval lies green. Both have already happened here:
   subprocess-free and deterministic. `auth.ts` takes its gh runner as a
   defaulted parameter so `tests/auth.test.ts` can fake every branch without
   spawning anything.
+- **`radar.js` stays dumb on purpose.** It is the entry point, and its only job
+  on an unsupported runtime is to explain the floor instead of dying inside the
+  module loader. So it carries NO module syntax (no `import`/`export`, no
+  top-level await) and no modern operators: it has to start on node versions
+  that cannot run anything else here, and `gh skill install` ships
+  `skills/radar/` with no package.json, so nothing declares whether it is ESM
+  or CommonJS. Modernising it would leave every other CI job green while
+  silently breaking the one path it exists for — the `too-old-node` job is what
+  catches that. Real CLI logic belongs in radar.ts.
 - **Zero runtime dependencies.** Built-in `fetch` and `node:` modules only;
   dev-deps are for typecheck/tests. The CLI must run with bare `node` ≥ 22.18
   AND bare `bun`: relative imports carry explicit `.ts` extensions and
