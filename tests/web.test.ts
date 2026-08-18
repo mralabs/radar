@@ -2,7 +2,8 @@
  * Web Adapter Tests — network stubbed, deterministic
  */
 
-import { describe, it, expect, afterEach } from 'bun:test'
+import { describe, it, afterEach } from 'node:test'
+import assert from 'node:assert/strict'
 import { getWebVersion } from '../skills/radar/scripts/core/api/web.ts'
 
 const realFetch = globalThis.fetch
@@ -22,8 +23,8 @@ describe('getWebVersion', () => {
 
     const result = await getWebVersion('https://example.test/changelog')
 
-    expect(result.version).toBe('4.2.1')
-    expect(result.error).toBeNull()
+    assert.strictEqual(result.version, '4.2.1')
+    assert.strictEqual(result.error, null)
   })
 
   it('should ignore versions inside markup and scripts', async () => {
@@ -36,7 +37,7 @@ describe('getWebVersion', () => {
 
     const result = await getWebVersion('https://example.test/changelog')
 
-    expect(result.version).toBe('4.2.1')
+    assert.strictEqual(result.version, '4.2.1')
   })
 
   it('should honour a custom pattern with a capture group', async () => {
@@ -47,7 +48,7 @@ describe('getWebVersion', () => {
       'Conductor (\\d+\\.\\d+\\.\\d+)'
     )
 
-    expect(result.version).toBe('1.4.7')
+    assert.strictEqual(result.version, '1.4.7')
   })
 
   it('should keep a prerelease suffix — beta→final must register as a change', async () => {
@@ -55,7 +56,7 @@ describe('getWebVersion', () => {
 
     const result = await getWebVersion('https://example.test/changelog')
 
-    expect(result.version).toBe('1.2.3-beta.2')
+    assert.strictEqual(result.version, '1.2.3-beta.2')
   })
 
   it('should error instead of guessing when nothing matches', async () => {
@@ -63,8 +64,8 @@ describe('getWebVersion', () => {
 
     const result = await getWebVersion('https://example.test/changelog')
 
-    expect(result.version).toBeNull()
-    expect(result.error).toContain('no version match')
+    assert.strictEqual(result.version, null)
+    assert.ok(result.error?.includes('no version match'))
   })
 
   it('should report a 404 as an error, not a version', async () => {
@@ -72,8 +73,8 @@ describe('getWebVersion', () => {
 
     const result = await getWebVersion('https://example.test/gone')
 
-    expect(result.version).toBeNull()
-    expect(result.error).toContain('404')
+    assert.strictEqual(result.version, null)
+    assert.ok(result.error?.includes('404'))
   })
 
   it('should never invent a publish date', async () => {
@@ -81,6 +82,6 @@ describe('getWebVersion', () => {
 
     const result = await getWebVersion('https://example.test/changelog')
 
-    expect(result.publishedAt).toBeNull()
+    assert.strictEqual(result.publishedAt, null)
   })
 })

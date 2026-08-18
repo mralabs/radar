@@ -2,7 +2,8 @@
  * GitHub API Tests — network stubbed, deterministic
  */
 
-import { describe, it, expect, afterEach } from 'bun:test'
+import { describe, it, afterEach } from 'node:test'
+import assert from 'node:assert/strict'
 import { getGitHubReleasesSince, getGitHubCommitsSince, getLatestTagSha, getGitHubFileText, extractGitHubRepo, tagMatchesVersion } from '../skills/radar/scripts/core/api/github.ts'
 
 const realFetch = globalThis.fetch
@@ -24,38 +25,38 @@ afterEach(() => {
 
 describe('extractGitHubRepo', () => {
   it('parses common repository url forms', () => {
-    expect(extractGitHubRepo('git+https://github.com/owner/repo.git')).toBe('owner/repo')
-    expect(extractGitHubRepo('https://github.com/owner/repo')).toBe('owner/repo')
-    expect(extractGitHubRepo('git://github.com/owner/repo.git')).toBe('owner/repo')
-    expect(extractGitHubRepo('https://github.com/owner/repo/tree/main')).toBe('owner/repo')
-    expect(extractGitHubRepo('https://example.com/owner/repo')).toBeNull()
-    expect(extractGitHubRepo(null)).toBeNull()
+    assert.strictEqual(extractGitHubRepo('git+https://github.com/owner/repo.git'), 'owner/repo')
+    assert.strictEqual(extractGitHubRepo('https://github.com/owner/repo'), 'owner/repo')
+    assert.strictEqual(extractGitHubRepo('git://github.com/owner/repo.git'), 'owner/repo')
+    assert.strictEqual(extractGitHubRepo('https://github.com/owner/repo/tree/main'), 'owner/repo')
+    assert.strictEqual(extractGitHubRepo('https://example.com/owner/repo'), null)
+    assert.strictEqual(extractGitHubRepo(null), null)
   })
 })
 
 describe('tagMatchesVersion', () => {
   it('matches plain and v-prefixed tags', () => {
-    expect(tagMatchesVersion('v1.2.3', '1.2.3')).toBe(true)
-    expect(tagMatchesVersion('1.2.3', 'v1.2.3')).toBe(true)
+    assert.strictEqual(tagMatchesVersion('v1.2.3', '1.2.3'), true)
+    assert.strictEqual(tagMatchesVersion('1.2.3', 'v1.2.3'), true)
   })
 
   it('matches monorepo tag styles only for the tracked package', () => {
-    expect(tagMatchesVersion('mypkg@1.2.3', '1.2.3', 'mypkg')).toBe(true)
-    expect(tagMatchesVersion('mypkg@v1.2.3', '1.2.3', 'mypkg')).toBe(true)
-    expect(tagMatchesVersion('mypkg/v1.2.3', '1.2.3', 'mypkg')).toBe(true)
-    expect(tagMatchesVersion('mypkg-v1.2.3', '1.2.3', 'mypkg')).toBe(true)
-    expect(tagMatchesVersion('@scope/mypkg@1.2.3', '1.2.3', '@scope/mypkg')).toBe(true)
+    assert.strictEqual(tagMatchesVersion('mypkg@1.2.3', '1.2.3', 'mypkg'), true)
+    assert.strictEqual(tagMatchesVersion('mypkg@v1.2.3', '1.2.3', 'mypkg'), true)
+    assert.strictEqual(tagMatchesVersion('mypkg/v1.2.3', '1.2.3', 'mypkg'), true)
+    assert.strictEqual(tagMatchesVersion('mypkg-v1.2.3', '1.2.3', 'mypkg'), true)
+    assert.strictEqual(tagMatchesVersion('@scope/mypkg@1.2.3', '1.2.3', '@scope/mypkg'), true)
   })
 
   it("never matches another package's tag (silent wrong-anchor bug)", () => {
-    expect(tagMatchesVersion('otherpkg@1.2.3', '1.2.3', 'mypkg')).toBe(false)
+    assert.strictEqual(tagMatchesVersion('otherpkg@1.2.3', '1.2.3', 'mypkg'), false)
     // without a package name, monorepo styles do not match at all
-    expect(tagMatchesVersion('mypkg@1.2.3', '1.2.3')).toBe(false)
+    assert.strictEqual(tagMatchesVersion('mypkg@1.2.3', '1.2.3'), false)
   })
 
   it('does not false-positive on version suffixes', () => {
-    expect(tagMatchesVersion('v11.2.3', '1.2.3')).toBe(false)
-    expect(tagMatchesVersion('mypkg@11.2.3', '1.2.3', 'mypkg')).toBe(false)
+    assert.strictEqual(tagMatchesVersion('v11.2.3', '1.2.3'), false)
+    assert.strictEqual(tagMatchesVersion('mypkg@11.2.3', '1.2.3', 'mypkg'), false)
   })
 })
 
@@ -70,12 +71,12 @@ describe('getGitHubReleasesSince — package-scoped anchors', () => {
 
     const result = await getGitHubReleasesSince('o/r', '1.2.3', 5, 'mypkg')
 
-    expect(result.releases.map(r => r.tag_name)).toEqual([
+    assert.deepStrictEqual(result.releases.map(r => r.tag_name), [
       'mypkg@2.0.0',
       'otherpkg@1.2.3',
       'mypkg@1.5.0'
     ])
-    expect(result.anchorFound).toBe(true)
+    assert.strictEqual(result.anchorFound, true)
   })
 })
 
@@ -88,10 +89,10 @@ describe('getGitHubReleasesSince', () => {
     const result = await getGitHubReleasesSince('o/r', '8.1.0')
 
     // everything newer than 8.1.0: 100 from page 1 + v8.2.0
-    expect(result.releases).toHaveLength(101)
-    expect(result.releases.at(-1)?.tag_name).toBe('v8.2.0')
-    expect(result.anchorFound).toBe(true)
-    expect(result.truncated).toBe(false)
+    assert.strictEqual(result.releases.length, 101)
+    assert.strictEqual(result.releases.at(-1)?.tag_name, 'v8.2.0')
+    assert.strictEqual(result.anchorFound, true)
+    assert.strictEqual(result.truncated, false)
   })
 
   it('reports anchorFound=false when the anchor is not among tags', async () => {
@@ -99,8 +100,8 @@ describe('getGitHubReleasesSince', () => {
 
     const result = await getGitHubReleasesSince('o/r', '1.0.0')
 
-    expect(result.releases).toHaveLength(2)
-    expect(result.anchorFound).toBe(false)
+    assert.strictEqual(result.releases.length, 2)
+    assert.strictEqual(result.anchorFound, false)
   })
 
   it('reports truncated=true when the anchor lies beyond the page cap', async () => {
@@ -114,10 +115,10 @@ describe('getGitHubReleasesSince', () => {
 
     const result = await getGitHubReleasesSince('o/r', '0.1.0')
 
-    expect(requested).toHaveLength(5)
-    expect(result.releases).toHaveLength(500)
-    expect(result.anchorFound).toBe(false)
-    expect(result.truncated).toBe(true)
+    assert.strictEqual(requested.length, 5)
+    assert.strictEqual(result.releases.length, 500)
+    assert.strictEqual(result.anchorFound, false)
+    assert.strictEqual(result.truncated, true)
   })
 
   it('fetches a single page when no anchor exists (baseline case)', async () => {
@@ -128,9 +129,9 @@ describe('getGitHubReleasesSince', () => {
 
     const result = await getGitHubReleasesSince('o/r', null)
 
-    expect(result.releases).toHaveLength(100)
-    expect(result.anchorFound).toBe(true)
-    expect(requested).toHaveLength(1)
+    assert.strictEqual(result.releases.length, 100)
+    assert.strictEqual(result.anchorFound, true)
+    assert.strictEqual(requested.length, 1)
   })
 })
 
@@ -157,10 +158,10 @@ describe('getGitHubCommitsSince', () => {
 
     const result = await getGitHubCommitsSince('o/r', '1.2.3')
 
-    expect(result.commits).toHaveLength(120)
-    expect(result.anchorFound).toBe(true)
-    expect(result.truncated).toBe(false)
-    expect(result.commits[0].sha).toBe('b19') // reversed: newest first
+    assert.strictEqual(result.commits.length, 120)
+    assert.strictEqual(result.anchorFound, true)
+    assert.strictEqual(result.truncated, false)
+    assert.strictEqual(result.commits[0].sha, 'b19') // reversed: newest first
   })
 
   it('retries with v prefix when the bare ref 404s', async () => {
@@ -175,9 +176,9 @@ describe('getGitHubCommitsSince', () => {
 
     const result = await getGitHubCommitsSince('o/r', '1.2.3')
 
-    expect(result.anchorFound).toBe(true)
-    expect(result.commits).toHaveLength(1)
-    expect(tried.some(u => u.includes('/compare/1.2.3...HEAD'))).toBe(true)
+    assert.strictEqual(result.anchorFound, true)
+    assert.strictEqual(result.commits.length, 1)
+    assert.strictEqual(tried.some(u => u.includes('/compare/1.2.3...HEAD')), true)
   })
 
   it('resolves commit-<sha> anchors', async () => {
@@ -189,8 +190,8 @@ describe('getGitHubCommitsSince', () => {
 
     const result = await getGitHubCommitsSince('o/r', 'commit-abc1234')
 
-    expect(result.anchorFound).toBe(true)
-    expect(result.commits).toHaveLength(2)
+    assert.strictEqual(result.anchorFound, true)
+    assert.strictEqual(result.commits.length, 2)
   })
 
   it('reports truncated when the fetch limit hides older commits', async () => {
@@ -202,9 +203,9 @@ describe('getGitHubCommitsSince', () => {
 
     const result = await getGitHubCommitsSince('o/r', '1.0.0')
 
-    expect(result.commits).toHaveLength(300)
-    expect(result.truncated).toBe(true)
-    expect(result.totalCommits).toBe(400)
+    assert.strictEqual(result.commits.length, 300)
+    assert.strictEqual(result.truncated, true)
+    assert.strictEqual(result.totalCommits, 400)
   })
 
   it('reports anchorFound=false when no ref spelling resolves', async () => {
@@ -212,8 +213,8 @@ describe('getGitHubCommitsSince', () => {
 
     const result = await getGitHubCommitsSince('o/r', '9.9.9')
 
-    expect(result.anchorFound).toBe(false)
-    expect(result.commits).toHaveLength(0)
+    assert.strictEqual(result.anchorFound, false)
+    assert.strictEqual(result.commits.length, 0)
   })
 })
 
@@ -231,8 +232,8 @@ describe('getLatestTagSha', () => {
 
     const result = await getLatestTagSha('o/r')
 
-    expect(result?.tag).toBe('v0.10.0')
-    expect(result?.sha).toBe('newest')
+    assert.strictEqual(result?.tag, 'v0.10.0')
+    assert.strictEqual(result?.sha, 'newest')
   })
 
   it('ignores non-release tags', async () => {
@@ -242,12 +243,12 @@ describe('getLatestTagSha', () => {
       { name: 'v1.0.0', commit: { sha: 'release' } }
     ])
 
-    expect((await getLatestTagSha('o/r'))?.sha).toBe('release')
+    assert.strictEqual((await getLatestTagSha('o/r'))?.sha, 'release')
   })
 
   it('returns null when no release tags exist', async () => {
     stubTags([])
-    expect(await getLatestTagSha('o/r')).toBeNull()
+    assert.strictEqual(await getLatestTagSha('o/r'), null)
   })
 })
 
@@ -264,14 +265,14 @@ describe('getGitHubFileText', () => {
 
     const text = await getGitHubFileText('o/r', 'action.yml', 'abc123')
 
-    expect(text).toBe('name: radar check')
-    expect(seen).toContain('/repos/o/r/contents/action.yml?ref=abc123')
+    assert.strictEqual(text, 'name: radar check')
+    assert.ok(seen.includes('/repos/o/r/contents/action.yml?ref=abc123'))
   })
 
   it('returns null when the file does not exist at the ref', async () => {
     globalThis.fetch = (async (_input: string | URL | Request) =>
       new Response('not found', { status: 404 })) as typeof fetch
 
-    expect(await getGitHubFileText('o/r', 'action.yml', 'abc123')).toBeNull()
+    assert.strictEqual(await getGitHubFileText('o/r', 'action.yml', 'abc123'), null)
   })
 })

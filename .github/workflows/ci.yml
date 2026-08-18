@@ -11,16 +11,31 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Floor, Active LTS, Current. 22.18.0 is not a taste preference: it
+        # is the first release with default type stripping, which is what
+        # lets node run the .ts sources directly, so it is the oldest node
+        # that can work and therefore the supported floor. The Current arm
+        # gives early warning on exactly that mechanism, which has kept
+        # changing across releases.
+        node: ['22.18.0', '24.x', '26.x']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # dual-runtime invariant: the CLI must also run as a bare script
+      - run: node skills/radar/scripts/radar.ts help > /dev/null
+
+  bun-smoke:
+    # bun is no longer part of the dev toolchain, but SKILL.md still offers it
+    # as a runtime — so that claim stays verified instead of assumed.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - run: bun install --frozen-lockfile
-      - run: bun run typecheck
-      - run: bun test tests
-      # dual-runtime invariant: the CLI must run on bare node at the
-      # documented FLOOR (22.18.0 = first version with default type
-      # stripping), not just on whatever the runner ships.
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22.18.0
-      - run: node skills/radar/scripts/radar.ts help > /dev/null
+      - run: bun skills/radar/scripts/radar.ts help > /dev/null

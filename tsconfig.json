@@ -8,7 +8,7 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["bun"]
+    "types": ["node"]
   },
   "include": ["skills/radar/scripts/**/*.ts", "tests/**/*.ts"]
 }

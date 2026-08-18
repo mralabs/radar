@@ -32,9 +32,9 @@ artifacts you wouldn't ship.
 ## Commands
 
 ```bash
-bun test tests                       # all tests — network-free, must pass
-bun run typecheck                    # strict tsc --noEmit, must pass
-bun skills/radar/scripts/radar.ts help
+npm test                             # all tests — network-free, must pass
+npm run typecheck                    # strict tsc --noEmit, must pass
+node skills/radar/scripts/radar.ts help
 ```
 
 CI enforces both on every push/PR.
@@ -89,10 +89,22 @@ Two ways an eval lies green. Both have already happened here:
   defaulted parameter so `tests/auth.test.ts` can fake every branch without
   spawning anything.
 - **Zero runtime dependencies.** Built-in `fetch` and `node:` modules only;
-  dev-deps are for typecheck/tests. The CLI must run with bare `bun` AND
-  bare `node` ≥ 22.18: relative imports carry explicit `.ts` extensions and
+  dev-deps are for typecheck/tests. The CLI must run with bare `node` ≥ 22.18
+  AND bare `bun`: relative imports carry explicit `.ts` extensions and
   tsconfig's `erasableSyntaxOnly` blocks syntax node can't strip (enums,
-  namespaces) — don't undo either. bun stays the dev toolchain (`bun test`).
+  namespaces) — don't undo either.
+- **The toolchain is node, nothing else.** Tests are `node:test` +
+  `node:assert/strict`, npm is the package manager, and there is no test
+  framework to install. Do not add an assertion library or reintroduce a
+  hand-rolled `expect` helper — a homemade assertion layer is the one piece
+  of test infrastructure whose bugs turn into false passes. CI runs the suite
+  on three arms — the 22.18.0 floor, Active LTS, and Current — so the floor is
+  tested rather than written down, and the Current arm warns early about type
+  stripping, the mechanism the floor exists for. The floor is the oldest node
+  that CAN run the sources, not the newest that is fashionable: don't raise it
+  without a feature that actually requires it. A separate job smoke-runs the
+  CLI under bun, because SKILL.md still offers bun as a runtime and that claim
+  should be verified rather than assumed.
 - **Tests stay deterministic.** Stub `globalThis.fetch`; no live network, no
   `Date.now()` assertions. Inject fakes via the `fetcher` parameter pattern
   (see `checkUpdates`).

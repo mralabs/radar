@@ -2,7 +2,8 @@
  * HTTP Client Tests — network stubbed, deterministic
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import { describe, it, beforeEach, afterEach } from 'node:test'
+import assert from 'node:assert/strict'
 import { fetchJson } from '../skills/radar/scripts/core/api/client.ts'
 import { getNuGetRepoUrl } from '../skills/radar/scripts/core/api/nuget.ts'
 
@@ -23,8 +24,8 @@ describe('fetchJson', () => {
 
     const data = await fetchJson<{ id: number; title: string }>('https://example.test/todos/1')
 
-    expect(data?.id).toBe(1)
-    expect(data?.title).toBe('hello')
+    assert.strictEqual(data?.id, 1)
+    assert.strictEqual(data?.title, 'hello')
   })
 
   it('should return null for 404', async () => {
@@ -32,7 +33,7 @@ describe('fetchJson', () => {
 
     const data = await fetchJson('https://example.test/missing')
 
-    expect(data).toBeNull()
+    assert.strictEqual(data, null)
   })
 
   it('should throw on network failure', async () => {
@@ -40,7 +41,7 @@ describe('fetchJson', () => {
       throw new TypeError('fetch failed')
     })
 
-    await expect(fetchJson('https://example.test/api')).rejects.toThrow()
+    await assert.rejects(fetchJson('https://example.test/api'))
   })
 
   it('should pass custom headers through', async () => {
@@ -54,7 +55,7 @@ describe('fetchJson', () => {
       headers: { 'X-Custom-Header': 'test' }
     })
 
-    expect(seen['x-custom-header']).toBe('test')
+    assert.strictEqual(seen['x-custom-header'], 'test')
   })
 })
 
@@ -73,7 +74,7 @@ describe('getNuGetRepoUrl', () => {
       return new Response('not found', { status: 404 })
     })
 
-    expect(await getNuGetRepoUrl('MyPkg')).toBe('https://github.com/o/r')
+    assert.strictEqual(await getNuGetRepoUrl('MyPkg'), 'https://github.com/o/r')
   })
 
   it('follows a page reference when leaves are not inlined', async () => {
@@ -92,11 +93,11 @@ describe('getNuGetRepoUrl', () => {
       return new Response('not found', { status: 404 })
     })
 
-    expect(await getNuGetRepoUrl('mypkg')).toBe('https://github.com/o/r')
+    assert.strictEqual(await getNuGetRepoUrl('mypkg'), 'https://github.com/o/r')
   })
 
   it('returns null when the package is unknown', async () => {
     stubFetch(() => new Response('not found', { status: 404 }))
-    expect(await getNuGetRepoUrl('ghost')).toBeNull()
+    assert.strictEqual(await getNuGetRepoUrl('ghost'), null)
   })
 })

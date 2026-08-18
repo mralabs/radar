@@ -2,7 +2,8 @@
  * Tools Management Tests
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test'
+import { describe, it, beforeEach } from 'node:test'
+import assert from 'node:assert/strict'
 import {
   generateToolId,
   findTool,
@@ -16,15 +17,15 @@ import type { Registry, Versions, Tool } from '../skills/radar/scripts/core/type
 
 describe('generateToolId', () => {
   it('should generate lowercase id from source', () => {
-    expect(generateToolId('anthropics/skills')).toBe('anthropics-skills')
+    assert.strictEqual(generateToolId('anthropics/skills'), 'anthropics-skills')
   })
 
   it('should replace special characters with dashes', () => {
-    expect(generateToolId('user@example.com/repo')).toBe('user-example-com-repo')
+    assert.strictEqual(generateToolId('user@example.com/repo'), 'user-example-com-repo')
   })
 
   it('should handle simple package names', () => {
-    expect(generateToolId('langchain')).toBe('langchain')
+    assert.strictEqual(generateToolId('langchain'), 'langchain')
   })
 })
 
@@ -40,16 +41,16 @@ describe('findTool', () => {
 
   it('should find tool by id', () => {
     const tool = findTool(registry, 'test-tool')
-    expect(tool?.name).toBe('Test Tool')
+    assert.strictEqual(tool?.name, 'Test Tool')
   })
 
   it('should find tool by name (case-insensitive)', () => {
     const tool = findTool(registry, 'TEST TOOL')
-    expect(tool?.id).toBe('test-tool')
+    assert.strictEqual(tool?.id, 'test-tool')
   })
 
   it('should return undefined for non-existent tool', () => {
-    expect(findTool(registry, 'no-such-tool')).toBeUndefined()
+    assert.strictEqual(findTool(registry, 'no-such-tool'), undefined)
   })
 })
 
@@ -64,12 +65,12 @@ describe('findToolPartial', () => {
 
   it('should find tool with partial name match', () => {
     const tool = findToolPartial(registry, 'Code Action')
-    expect(tool?.id).toBe('claude-code-action')
+    assert.strictEqual(tool?.id, 'claude-code-action')
   })
 
   it('should be case-insensitive', () => {
     const tool = findToolPartial(registry, 'CLAUDE')
-    expect(tool?.id).toBe('claude-code-action')
+    assert.strictEqual(tool?.id, 'claude-code-action')
   })
 })
 
@@ -83,32 +84,32 @@ describe('addTool', () => {
   it('should add a new github tool', () => {
     const result = addTool(registry, 'github', 'org/repo', { name: 'My Repo' })
 
-    expect(result.success).toBe(true)
-    expect(result.tool?.id).toBe('org-repo')
-    expect(result.tool?.name).toBe('My Repo')
-    expect(result.tool?.type).toBe('github')
-    expect(result.tool?.url).toBe('https://github.com/org/repo')
-    expect(registry.tools).toHaveLength(1)
+    assert.strictEqual(result.success, true)
+    assert.strictEqual(result.tool?.id, 'org-repo')
+    assert.strictEqual(result.tool?.name, 'My Repo')
+    assert.strictEqual(result.tool?.type, 'github')
+    assert.strictEqual(result.tool?.url, 'https://github.com/org/repo')
+    assert.strictEqual(registry.tools.length, 1)
   })
 
   it('should add npm tool without url', () => {
     const result = addTool(registry, 'npm', 'my-package')
 
-    expect(result.success).toBe(true)
-    expect(result.tool?.url).toBeNull()
+    assert.strictEqual(result.success, true)
+    assert.strictEqual(result.tool?.url, null)
   })
 
   it('should fail if tool already exists', () => {
     addTool(registry, 'github', 'org/repo')
     const result = addTool(registry, 'github', 'org/repo')
 
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('already tracked')
+    assert.strictEqual(result.success, false)
+    assert.ok(result.error?.includes('already tracked'))
   })
 
   it('should use default category if not provided', () => {
     const result = addTool(registry, 'pypi', 'my-package')
-    expect(result.tool?.category).toBe('uncategorized')
+    assert.strictEqual(result.tool?.category, 'uncategorized')
   })
 
   it('should use custom category and tags', () => {
@@ -117,8 +118,8 @@ describe('addTool', () => {
       tags: ['ai', 'ml']
     })
 
-    expect(result.tool?.category).toBe('frameworks')
-    expect(result.tool?.tags).toEqual(['ai', 'ml'])
+    assert.strictEqual(result.tool?.category, 'frameworks')
+    assert.deepStrictEqual(result.tool?.tags, ['ai', 'ml'])
   })
 })
 
@@ -139,17 +140,17 @@ describe('removeTool', () => {
   it('should remove existing tool', () => {
     const result = removeTool(registry, 'tool-1')
 
-    expect(result.success).toBe(true)
-    expect(registry.tools).toHaveLength(1)
-    expect(registry.tools[0].id).toBe('tool-2')
+    assert.strictEqual(result.success, true)
+    assert.strictEqual(registry.tools.length, 1)
+    assert.strictEqual(registry.tools[0].id, 'tool-2')
   })
 
   it('should fail if tool not found', () => {
     const result = removeTool(registry, 'non-existent')
 
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('not found')
-    expect(registry.tools).toHaveLength(2)
+    assert.strictEqual(result.success, false)
+    assert.ok(result.error?.includes('not found'))
+    assert.strictEqual(registry.tools.length, 2)
   })
 })
 
@@ -176,21 +177,21 @@ describe('getToolDetails', () => {
   it('should return tool with version data', () => {
     const details = getToolDetails(registry, versions, 'my-tool')
 
-    expect(details?.tool.name).toBe('My Tool')
-    expect(details?.versionData.currentVersion).toBe('2.0.0')
-    expect(details?.versionData.lastAnalyzedVersion).toBe('1.5.0')
+    assert.strictEqual(details?.tool.name, 'My Tool')
+    assert.strictEqual(details?.versionData.currentVersion, '2.0.0')
+    assert.strictEqual(details?.versionData.lastAnalyzedVersion, '1.5.0')
   })
 
   it('should return null for non-existent tool', () => {
-    expect(getToolDetails(registry, versions, 'no-tool')).toBeNull()
+    assert.strictEqual(getToolDetails(registry, versions, 'no-tool'), null)
   })
 
   it('should return empty version data if not tracked', () => {
     const emptyVersions: Versions = { lastChecked: null, tools: {} }
     const details = getToolDetails(registry, emptyVersions, 'my-tool')
 
-    expect(details?.tool.name).toBe('My Tool')
-    expect(details?.versionData).toEqual({})
+    assert.strictEqual(details?.tool.name, 'My Tool')
+    assert.deepStrictEqual(details?.versionData, {})
   })
 })
 
@@ -217,38 +218,38 @@ describe('markAnalyzed', () => {
   it('should mark tool as analyzed with provided version', () => {
     const result = markAnalyzed(registry, versions, 'my-tool', '2.0.0')
 
-    expect(result.success).toBe(true)
-    expect(result.newVersion).toBe('2.0.0')
-    expect(versions.tools['my-tool'].lastAnalyzedVersion).toBe('2.0.0')
-    expect(versions.tools['my-tool'].lastAnalyzedDate).toBeDefined()
+    assert.strictEqual(result.success, true)
+    assert.strictEqual(result.newVersion, '2.0.0')
+    assert.strictEqual(versions.tools['my-tool'].lastAnalyzedVersion, '2.0.0')
+    assert.notStrictEqual(versions.tools['my-tool'].lastAnalyzedDate, undefined)
   })
 
   it('should use currentVersion if no version provided', () => {
     const result = markAnalyzed(registry, versions, 'my-tool')
 
-    expect(result.success).toBe(true)
-    expect(result.newVersion).toBe('2.0.0')
+    assert.strictEqual(result.success, true)
+    assert.strictEqual(result.newVersion, '2.0.0')
   })
 
   it('should fail if tool not found', () => {
     const result = markAnalyzed(registry, versions, 'no-tool')
 
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('not found')
+    assert.strictEqual(result.success, false)
+    assert.ok(result.error?.includes('not found'))
   })
 
   it('should fail if no version available', () => {
     versions.tools['my-tool'] = {}
     const result = markAnalyzed(registry, versions, 'my-tool')
 
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('No version specified')
+    assert.strictEqual(result.success, false)
+    assert.ok(result.error?.includes('No version specified'))
   })
 
   it('should track old version', () => {
     versions.tools['my-tool'].lastAnalyzedVersion = '1.0.0'
     const result = markAnalyzed(registry, versions, 'my-tool', '2.0.0')
 
-    expect(result.oldVersion).toBe('1.0.0')
+    assert.strictEqual(result.oldVersion, '1.0.0')
   })
 })

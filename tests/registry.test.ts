@@ -2,7 +2,8 @@
  * Registry Tests
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import { describe, it, beforeEach, afterEach } from 'node:test'
+import assert from 'node:assert/strict'
 import { existsSync, unlinkSync, mkdirSync, rmdirSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -34,9 +35,9 @@ describe('Registry', () => {
     it('should return default registry if file does not exist', () => {
       const registry = loadRegistry(REGISTRY_PATH)
 
-      expect(registry.version).toBe('1.0.0')
-      expect(registry.categories).toEqual({})
-      expect(registry.tools).toEqual([])
+      assert.strictEqual(registry.version, '1.0.0')
+      assert.deepStrictEqual(registry.categories, {})
+      assert.deepStrictEqual(registry.tools, [])
     })
 
     it('should load existing registry', () => {
@@ -51,9 +52,9 @@ describe('Registry', () => {
       saveRegistry(REGISTRY_PATH, existing)
       const loaded = loadRegistry(REGISTRY_PATH)
 
-      expect(loaded.version).toBe('2.0.0')
-      expect(loaded.tools).toHaveLength(1)
-      expect(loaded.tools[0].id).toBe('tool-1')
+      assert.strictEqual(loaded.version, '2.0.0')
+      assert.strictEqual(loaded.tools.length, 1)
+      assert.strictEqual(loaded.tools[0].id, 'tool-1')
     })
   })
 
@@ -68,8 +69,8 @@ describe('Registry', () => {
       saveRegistry(REGISTRY_PATH, registry)
 
       const content = JSON.parse(readFileSync(REGISTRY_PATH, 'utf8'))
-      expect(content.lastUpdated).toBeDefined()
-      expect(content.version).toBe('1.0.0')
+      assert.notStrictEqual(content.lastUpdated, undefined)
+      assert.strictEqual(content.version, '1.0.0')
     })
   })
 
@@ -77,8 +78,8 @@ describe('Registry', () => {
     it('should return default versions if file does not exist', () => {
       const versions = loadVersions(VERSIONS_PATH)
 
-      expect(versions.lastChecked).toBeNull()
-      expect(versions.tools).toEqual({})
+      assert.strictEqual(versions.lastChecked, null)
+      assert.deepStrictEqual(versions.tools, {})
     })
 
     it('should load existing versions', () => {
@@ -92,7 +93,7 @@ describe('Registry', () => {
       saveVersions(VERSIONS_PATH, existing)
       const loaded = loadVersions(VERSIONS_PATH)
 
-      expect(loaded.tools['tool-1'].currentVersion).toBe('1.0.0')
+      assert.strictEqual(loaded.tools['tool-1'].currentVersion, '1.0.0')
     })
   })
 
@@ -106,7 +107,7 @@ describe('Registry', () => {
       saveVersions(VERSIONS_PATH, versions)
 
       const content = JSON.parse(readFileSync(VERSIONS_PATH, 'utf8'))
-      expect(content.lastChecked).toBeDefined()
+      assert.notStrictEqual(content.lastChecked, undefined)
     })
   })
 })
@@ -126,24 +127,24 @@ describe('load validation and atomic saves', () => {
 
   it('loadRegistry throws a clear error on malformed JSON', () => {
     writeFileSync(REG, '{broken')
-    expect(() => loadRegistry(REG)).toThrow(/corrupt/)
+    assert.throws(() => loadRegistry(REG), /corrupt/)
   })
 
   it('loadRegistry throws on valid JSON with wrong shape', () => {
     writeFileSync(REG, JSON.stringify({ tools: 'oops' }))
-    expect(() => loadRegistry(REG)).toThrow(/not a valid registry/)
+    assert.throws(() => loadRegistry(REG), /not a valid registry/)
   })
 
   it('loadVersions throws on wrong shape', () => {
     writeFileSync(VER, JSON.stringify({ tools: 42 }))
-    expect(() => loadVersions(VER)).toThrow(/not a valid versions file/)
+    assert.throws(() => loadVersions(VER), /not a valid versions file/)
   })
 
   it('saveRegistry writes atomically — no tmp file left, content valid', () => {
     const registry = { version: '1.0.0', categories: {}, tools: [] }
     saveRegistry(REG, registry)
 
-    expect(existsSync(`${REG}.tmp`)).toBe(false)
-    expect(loadRegistry(REG).tools).toEqual([])
+    assert.strictEqual(existsSync(`${REG}.tmp`), false)
+    assert.deepStrictEqual(loadRegistry(REG).tools, [])
   })
 })
