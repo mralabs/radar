@@ -31,6 +31,34 @@ jobs:
       # dual-runtime invariant: the CLI must also run as a bare script, and
       # its usage strings name the interpreter that actually launched it
       - run: "node skills/radar/scripts/radar.js help | grep -q 'Usage: node radar.js'"
+      # A command that could not do what was asked must SAY SO in its exit
+      # code. This shipped wrong for a long time precisely because a human
+      # reading the terminal sees the error either way — only a script, or
+      # this job, can tell the difference.
+      - name: failures exit non-zero, successes exit zero
+        run: |
+          set -u
+          fails() {
+            if node skills/radar/scripts/radar.js "$@" >/dev/null 2>&1; then
+              echo "expected non-zero exit: radar.js $*" >&2; exit 1
+            fi
+          }
+          works() {
+            if ! node skills/radar/scripts/radar.js "$@" >/dev/null 2>&1; then
+              echo "expected zero exit: radar.js $*" >&2; exit 1
+            fi
+          }
+          fails show
+          fails show no-such-tool-id
+          fails changelog no-such-tool-id
+          fails history no-such-tool-id
+          fails add not-a-type something
+          works help
+          works list
+          # the weekly action parses this payload with jq; partial fetch
+          # errors belong in .errors, not in a failed workflow
+          works check --json
+          git checkout -- .radar/versions.json
 
   too-old-node:
     # radar.js exists to EXPLAIN a too-old runtime instead of crashing inside

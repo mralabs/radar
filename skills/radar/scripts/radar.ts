@@ -69,6 +69,20 @@ function log(color: string, message: string): void {
 }
 
 /**
+ * Report that a command could not do what was asked.
+ *
+ * Sets the exit code instead of calling process.exit, so pending stdout is
+ * flushed rather than truncated — and callers stop reading "tool not found"
+ * as a success. `--json` output is NOT routed through here: like `check
+ * --json`, emitting a valid payload that describes the problem IS the
+ * requested output, so it stays exit 0.
+ */
+function fail(message: string): void {
+  log(RED, message)
+  process.exitCode = 1
+}
+
+/**
  * Load .env file if exists (zero-dependency implementation)
  */
 function loadEnvFile(): void {
@@ -253,11 +267,11 @@ function cmdAddTool(args: string[]): void {
 
   if (!type || !source || !TOOL_TYPES.includes(type)) {
     if (type && source) log(RED, `Unknown type '${type}'`)
-    log(RED, `Usage: ${RUNTIME} ${ENTRY} add <type> <source> [--category CAT]`)
+    fail(`Usage: ${RUNTIME} ${ENTRY} add <type> <source> [--category CAT]`)
     log(BLUE, `Types: ${TOOL_TYPES.join(', ')}`)
     log(BLUE, `Example: ${RUNTIME} ${ENTRY} add github anthropics/skills --category official`)
     log(BLUE, `Example: ${RUNTIME} ${ENTRY} add web https://conductor.build/changelog --category competitors`)
-    process.exit(1)
+    return
   }
 
   const registry = loadRegistry(REGISTRY_PATH)
@@ -271,7 +285,7 @@ function cmdAddTool(args: string[]): void {
     saveRegistry(REGISTRY_PATH, registry)
     log(GREEN, `Added: ${result.tool.name} (${result.tool.id})`)
   } else {
-    log(RED, result.error ?? 'Failed to add tool')
+    fail(result.error ?? 'Failed to add tool')
   }
 }
 
@@ -279,7 +293,7 @@ function cmdRemoveTool(args: string[]): void {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} ${ENTRY} remove <tool-id>`)
+    fail(`Usage: ${RUNTIME} ${ENTRY} remove <tool-id>`)
     return
   }
 
@@ -299,7 +313,7 @@ function cmdRemoveTool(args: string[]): void {
 
     log(GREEN, `Removed: ${toolId}`)
   } else {
-    log(RED, result.error ?? 'Failed to remove tool')
+    fail(result.error ?? 'Failed to remove tool')
   }
 }
 
@@ -307,7 +321,7 @@ function cmdShowTool(args: string[]): void {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} ${ENTRY} show <tool-id>`)
+    fail(`Usage: ${RUNTIME} ${ENTRY} show <tool-id>`)
     return
   }
 
@@ -316,7 +330,7 @@ function cmdShowTool(args: string[]): void {
   const details = getToolDetails(registry, versions, toolId)
 
   if (!details) {
-    log(RED, `Tool not found: ${toolId}`)
+    fail(`Tool not found: ${toolId}`)
     return
   }
 
@@ -345,7 +359,7 @@ async function cmdChangelog(args: string[]): Promise<void> {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} ${ENTRY} changelog <tool-id> [--json]`)
+    fail(`Usage: ${RUNTIME} ${ENTRY} changelog <tool-id> [--json]`)
     log(BLUE, `Example: ${RUNTIME} ${ENTRY} changelog spec-kit`)
     return
   }
@@ -355,7 +369,7 @@ async function cmdChangelog(args: string[]): Promise<void> {
   const result = await getChangelog(registry, toolId, versions)
 
   if (!result) {
-    log(RED, `Tool not found: ${toolId}`)
+    fail(`Tool not found: ${toolId}`)
     return
   }
 
@@ -365,7 +379,7 @@ async function cmdChangelog(args: string[]): Promise<void> {
   }
 
   if (result.error) {
-    log(RED, result.error)
+    fail(result.error)
     return
   }
 
@@ -405,7 +419,7 @@ function cmdMarkAnalyzed(args: string[]): void {
   const version = args[2]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} ${ENTRY} mark-analyzed <tool-id> [version]`)
+    fail(`Usage: ${RUNTIME} ${ENTRY} mark-analyzed <tool-id> [version]`)
     log(BLUE, `Example: ${RUNTIME} ${ENTRY} mark-analyzed agent-os 3.0.0`)
     log(BLUE, 'If version is omitted, uses currentVersion')
     return
@@ -422,7 +436,7 @@ function cmdMarkAnalyzed(args: string[]): void {
       console.log(`  Previous: ${result.oldVersion}`)
     }
   } else {
-    log(RED, result.error ?? 'Failed to mark as analyzed')
+    fail(result.error ?? 'Failed to mark as analyzed')
   }
 }
 
@@ -430,7 +444,7 @@ function cmdHistory(args: string[]): void {
   const toolId = args[1]
 
   if (!toolId) {
-    log(RED, `Usage: ${RUNTIME} ${ENTRY} history <tool-id>`)
+    fail(`Usage: ${RUNTIME} ${ENTRY} history <tool-id>`)
     log(BLUE, `Example: ${RUNTIME} ${ENTRY} history agent-os`)
     return
   }
@@ -440,7 +454,7 @@ function cmdHistory(args: string[]): void {
   const details = getToolDetails(registry, versions, toolId)
 
   if (!details) {
-    log(RED, `Tool not found: ${toolId}`)
+    fail(`Tool not found: ${toolId}`)
     return
   }
 
@@ -482,7 +496,7 @@ async function cmdRateLimit(): Promise<void> {
   const rateLimit = await getGitHubRateLimit()
 
   if (!rateLimit) {
-    log(RED, 'Failed to get rate limit info')
+    fail('Failed to get rate limit info')
     return
   }
 
