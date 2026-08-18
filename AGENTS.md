@@ -126,6 +126,23 @@ Two ways an eval lies green. Both have already happened here:
   without a feature that actually requires it. A separate job smoke-runs the
   CLI under bun, because SKILL.md still offers bun as a runtime and that claim
   should be verified rather than assumed.
+- **Shipping `.ts` and running it unbuilt is a priced decision, not a default.**
+  It is why the node floor exists at all, and it is unusual: across the
+  highest-star skill repos (superpowers, anthropics/skills, addyosmani,
+  trailofbits, claude-plugins-official) the scripts agents invoke are Python or
+  plain `.js`, and every `.ts` found in them turned out to be an example, a test
+  sample, or a separately-run MCP server — none is executed as a skill script.
+  The two TypeScript ones compile: dev-browser ships `bin/*.js` via npm, and
+  claude-hud — same git-clone distribution as radar, so no install step runs —
+  **commits `dist/`** and drops its floor to node >= 18. That is the alternative
+  on offer, and its price is a build artifact that can silently go stale, which
+  is the one thing "never silently incomplete" exists to prevent. radar pays a
+  runtime floor instead. Don't re-open this without a new reason; both prices
+  were compared on 2026-08-18.
+  Nor is bun the escape from it: measured the same day, bun starts the CLI in
+  52ms against node's 97ms, but radar's work is network-bound, so a real
+  `check` came out 2% apart (1592ms vs 1623ms). bun is supported because it
+  rescues an old-node machine, not because it is faster here.
 - **Tests stay deterministic.** Stub `globalThis.fetch`; no live network, no
   `Date.now()` assertions. Inject fakes via the `fetcher` parameter pattern
   (see `checkUpdates`).
