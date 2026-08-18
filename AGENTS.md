@@ -80,6 +80,16 @@ Two ways an eval lies green. Both have already happened here:
   returning defaults (a default + save wipes user data). Incomplete ranges
   (unfound changelog anchor, fetch caps) must surface a `warning`, never look
   exhaustive. Failed fetches must not overwrite last-known version state.
+- **A failed command exits non-zero.** Anything that could not do what was
+  asked — missing argument, unknown tool id, a failed operation — goes through
+  `fail()`, which sets `process.exitCode` (never `process.exit`, which can
+  truncate the very message being printed). Two deliberate exceptions: partial
+  fetch errors during `check`, because one 404 must not break the weekly
+  action, and `--json`, because a valid payload describing the problem IS the
+  requested output — `action.yml` reads `.errors` out of exactly such a
+  payload. This is worth stating because the bug class is invisible to a human:
+  the error prints either way, and only a caller reading `$?` can tell. Thirteen
+  paths shipped wrong for a long time before the CI step in `check` caught it.
 - **Never read a token from a file.** `.radar/config.json` is git-tracked by
   design, so a secret must not be configurable there. The resolution order is
   `GITHUB_TOKEN` → `GH_TOKEN` → `gh auth token --hostname github.com`, and an
