@@ -180,5 +180,18 @@ Two ways an eval lies green. Both have already happened here:
   `getChangelog` returns the URL + range and the agent WebFetches it.
   Radar does not scrape release notes; stripped-markup prose would look
   exhaustive while silently dropping half the page.
+  A custom `pattern` is matched against the stripped text first and the raw
+  page only if that finds nothing — the order is the whole design. Raw-only
+  looked right (the pattern says where the version is) but regresses
+  silently: `<meta content="Conductor 1.4.0">` outranks the body's 1.4.7,
+  so the weekly check reports a version older than the page shows. Stripped
+  first can only return what it always returned; the fallback exists for
+  pages that keep the version nowhere else, like Mintlify's `<Update
+  label="v0.22.0">`. The default heuristic never falls back — the strip is
+  the only thing keeping "first version-shaped string" off asset URLs.
+  A `pattern` written as a sibling of `source` is refused rather than
+  dropped, but only when it is actually the one being dropped: beside a
+  `source.pattern` that IS in effect it changes nothing, and failing there
+  would break a working entry every week.
   Re-export from `core/index.ts` only if the client should be public
   barrel API (not needed for CLI behavior).

@@ -302,6 +302,75 @@ describe('getChangelog — changelog file fallback', () => {
   })
 })
 
+describe('web tool source shape', () => {
+  const realFetch = globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = realFetch
+  })
+
+  const makeRegistry = (tool: Record<string, unknown>): Registry => ({
+    version: '1.0.0',
+    categories: { official: { name: 'Official' } },
+    tools: [tool as unknown as Registry['tools'][number]]
+  })
+
+  it('reports a pattern written beside source instead of dropping it', async () => {
+    // The guard runs before any fetch — a stub that throws proves it.
+    globalThis.fetch = (async () => {
+      throw new Error('the misplaced-pattern guard must short-circuit before fetching')
+    }) as typeof fetch
+
+    const registry = makeRegistry({
+      id: 'xirp',
+      name: 'Xirp',
+      category: 'official',
+      type: 'web',
+      source: 'https://example.test/changelog.md',
+      pattern: '<Update label="v(\\d+\\.\\d+\\.\\d+)"',
+      url: null,
+      status: 'active'
+    })
+    const versions: Versions = { lastChecked: null, tools: {} }
+
+    const result = await checkUpdates(registry, versions, {})
+
+    assert.strictEqual(result.errors.length, 1)
+    assert.ok(result.errors[0].error.includes('belongs inside "source"'))
+    assert.strictEqual(result.baselined.length, 0)
+  })
+
+  it('accepts a stray sibling when source.pattern is the one in effect', async () => {
+    // The misplaced key changes nothing here — refusing would break a
+    // working entry every week over a leftover field.
+    globalThis.fetch = (async () =>
+      new Response('<Update label="v0.22.0">', {
+        status: 200,
+        headers: { 'Content-Type': 'text/markdown' }
+      })) as typeof fetch
+
+    const registry = makeRegistry({
+      id: 'xirp',
+      name: 'Xirp',
+      category: 'official',
+      type: 'web',
+      source: {
+        url: 'https://example.test/changelog.md',
+        pattern: '<Update label="v(\\d+\\.\\d+\\.\\d+)"'
+      },
+      pattern: '<leftover>',
+      url: null,
+      status: 'active'
+    })
+    const versions: Versions = { lastChecked: null, tools: {} }
+
+    const result = await checkUpdates(registry, versions, {})
+
+    assert.strictEqual(result.errors.length, 0)
+    assert.strictEqual(result.baselined[0].version, '0.22.0')
+  })
+})
+
 describe('checkUpdates baseline lifecycle', () => {
   const makeRegistry = (): Registry => ({
     version: '1.0.0',

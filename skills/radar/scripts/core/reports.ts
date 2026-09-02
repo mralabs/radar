@@ -56,12 +56,34 @@ function getPackageName(tool: Tool): string | null {
 /**
  * Page URL (+ optional version pattern) for a web tool. A bare string
  * source is the URL; the object form carries the pattern override.
+ *
+ * A `pattern` written as a sibling of `source` rather than inside it is
+ * refused, not dropped. It reads as correct, nothing here can see it, and
+ * the resulting "no match" names the default pattern — so the user debugs
+ * a regex that was never run. Only the dropped case is refused: a stray
+ * sibling next to a `source.pattern` that IS in effect changes nothing,
+ * and failing there would break a working entry every week.
  */
-function webSource(tool: Tool): { url: string | null; pattern?: string } {
+function webSource(tool: Tool): { url: string | null; pattern?: string; error?: string } {
+  const pattern = typeof tool.source === 'object' ? tool.source.pattern : undefined
+  const dropped = 'pattern' in tool && !pattern
+
   if (typeof tool.source === 'string') {
-    return { url: tool.source }
+    return { url: tool.source, error: misplacedPatternError(tool, dropped) }
   }
-  return { url: tool.source.url ?? null, pattern: tool.source.pattern }
+  return { url: tool.source.url ?? null, pattern, error: misplacedPatternError(tool, dropped) }
+}
+
+function misplacedPatternError(tool: Tool, dropped: boolean): string | undefined {
+  if (!dropped) {
+    return undefined
+  }
+  // Refusing, not falling back to the default heuristic: a silent default
+  // here reports a version the user never asked for, every week.
+  return (
+    `${tool.id}: "pattern" belongs inside "source" — "source": { "url": …, "pattern": … }. ` +
+    'Where it is, nothing reads it, so this tool was not checked.'
+  )
 }
 
 /**
@@ -88,7 +110,10 @@ async function fetchVersion(tool: Tool): Promise<VersionResult> {
       return pkg ? getNuGetVersion(pkg) : { version: null, publishedAt: null, error: 'no source' }
 
     case 'web': {
-      const { url, pattern } = webSource(tool)
+      const { url, pattern, error } = webSource(tool)
+      if (error) {
+        return { version: null, publishedAt: null, error }
+      }
       return url
         ? getWebVersion(url, pattern)
         : { version: null, publishedAt: null, error: 'no source' }

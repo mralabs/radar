@@ -56,9 +56,16 @@ node <skill-dir>/scripts/radar.js <command>  # or `bun` — needed if node is ol
    nuget, web). Use `web <url>` for anything with no repo and no package —
    a closed-source product that only publishes a release notes page. It
    tracks the first version-shaped string in that page's text; when that
-   is the wrong number (a "2026" heading, a plan price), open
-   `.radar/registry.json` and give the entry a pattern instead:
+   is the wrong number (a "2026" heading, a plan price) or the page's
+   versions live only in markup, open `.radar/registry.json` and give the
+   entry a pattern instead:
    `"source": { "url": "…", "pattern": "Conductor (\\d+\\.\\d+\\.\\d+)" }`.
+   The pattern must sit **inside** `source`. Beside it nothing reads it,
+   and radar refuses to check that tool rather than quietly falling back.
+   A pattern is tried against the rendered text first and then against the
+   page source, so it can also anchor on markup — a Mintlify changelog
+   publishes versions only as `<Update label="v0.22.0">`, matched with
+   `"pattern": "<Update label=\"v(\\d+\\.\\d+\\.\\d+)\""`.
    Verify against the live page before moving on — a wrong pattern reports
    phantom updates every week.
    If they said yes to the weekly check, run
