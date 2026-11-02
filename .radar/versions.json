@@ -1,11 +1,17 @@
 {
-  "lastChecked": "2026-10-26T13:48:56.921Z",
+  "lastChecked": "2026-11-02T16:46:11.252Z",
   "tools": {
     "dependabot-dependabot-core": {
-      "lastChecked": "2026-10-26T13:48:56.281Z",
-      "currentVersion": "0.401.0",
-      "latestReleaseDate": "2026-10-19T18:02:43Z",
+      "lastChecked": "2026-11-02T16:46:10.668Z",
+      "currentVersion": "0.403.0",
+      "latestReleaseDate": "2026-11-02T16:29:05Z",
       "history": [
+        {
+          "version": "0.403.0",
+          "date": "2026-11-02T16:29:05Z",
+          "type": "minor",
+          "breaking": false
+        },
         {
           "version": "0.401.0",
           "date": "2026-10-19T18:02:43Z",
@@ -94,10 +100,16 @@
       "lastAnalyzedVersion": "0.387.0"
     },
     "renovatebot-renovate": {
-      "lastChecked": "2026-10-26T13:48:56.401Z",
-      "currentVersion": "44.183.0",
-      "latestReleaseDate": "2026-10-26T13:28:16Z",
+      "lastChecked": "2026-11-02T16:46:10.583Z",
+      "currentVersion": "44.203.0",
+      "latestReleaseDate": "2026-11-02T16:19:31Z",
       "history": [
+        {
+          "version": "44.203.0",
+          "date": "2026-11-02T16:19:31Z",
+          "type": "minor",
+          "breaking": false
+        },
         {
           "version": "44.183.0",
           "date": "2026-10-26T13:28:16Z",
@@ -198,10 +210,16 @@
       "lastAnalyzedVersion": "43.270.0"
     },
     "claude-code": {
-      "lastChecked": "2026-10-26T13:48:56.301Z",
-      "currentVersion": "2.1.310",
-      "latestReleaseDate": "2026-10-23T23:39:00Z",
+      "lastChecked": "2026-11-02T16:46:10.669Z",
+      "currentVersion": "2.1.316",
+      "latestReleaseDate": "2026-10-31T01:01:35Z",
       "history": [
+        {
+          "version": "2.1.316",
+          "date": "2026-10-31T01:01:35Z",
+          "type": "patch",
+          "breaking": false
+        },
         {
           "version": "2.1.310",
           "date": "2026-10-23T23:39:00Z",
@@ -296,7 +314,7 @@
       "lastAnalyzedVersion": "2.1.214"
     },
     "microsoft-typescript": {
-      "lastChecked": "2026-10-26T13:48:56.288Z",
+      "lastChecked": "2026-11-02T16:46:10.668Z",
       "currentVersion": "7.0.2",
       "latestReleaseDate": "2026-08-20T18:09:49Z",
       "history": [
@@ -316,7 +334,7 @@
       "lastAnalyzedVersion": "6.0.3"
     },
     "oven-sh-bun": {
-      "lastChecked": "2026-10-26T13:48:56.330Z",
+      "lastChecked": "2026-11-02T16:46:10.669Z",
       "currentVersion": "bun-v1.4.4",
       "latestReleaseDate": "2026-10-22T10:11:32Z",
       "history": [
@@ -354,10 +372,16 @@
       "lastAnalyzedVersion": "bun-v1.3.14"
     },
     "github-cli": {
-      "lastChecked": "2026-10-26T13:48:56.301Z",
-      "currentVersion": "2.103.2",
-      "latestReleaseDate": "2026-10-23T20:24:12Z",
+      "lastChecked": "2026-11-02T16:46:10.669Z",
+      "currentVersion": "2.103.3",
+      "latestReleaseDate": "2026-10-26T19:20:08Z",
       "history": [
+        {
+          "version": "2.103.3",
+          "date": "2026-10-26T19:20:08Z",
+          "type": "patch",
+          "breaking": false
+        },
         {
           "version": "2.103.2",
           "date": "2026-10-23T20:24:12Z",
@@ -404,7 +428,7 @@
       "lastAnalyzedVersion": "2.96.0"
     },
     "lilydjwg-nvchecker": {
-      "lastChecked": "2026-10-26T13:48:56.739Z",
+      "lastChecked": "2026-11-02T16:46:10.995Z",
       "currentVersion": "2.22",
       "latestReleaseDate": null,
       "history": [
@@ -424,7 +448,7 @@
       "lastAnalyzedVersion": "2.21"
     },
     "agentskills-agentskills": {
-      "lastChecked": "2026-10-26T13:48:56.921Z",
+      "lastChecked": "2026-11-02T16:46:11.252Z",
       "currentVersion": "commit-69ef37e",
       "latestReleaseDate": "2026-08-09T20:36:04Z",
       "history": [
